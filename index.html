@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-<title>M_Viewer V0.02</title>
+<title>M_Viewer V07.02</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
@@ -177,111 +177,6 @@ body {
   position: absolute; bottom: 0; right: 0; width: 22px; height: 22px; cursor: se-resize;
   background: linear-gradient(135deg, transparent 50%, var(--acc) 50%); border-radius: 0 0 8px 0;
 }
-/* ① SubWin 追加リサイズハンドル (左下・左上) */
-.swn-rz-sw {
-  position: absolute; bottom: 0; left: 0; width: 22px; height: 22px; cursor: sw-resize;
-  background: linear-gradient(225deg, transparent 50%, var(--acc) 50%); border-radius: 0 0 0 8px;
-}
-.swn-rz-nw {
-  position: absolute; top: 30px; left: 0; width: 22px; height: 22px; cursor: nw-resize;
-  background: linear-gradient(315deg, transparent 50%, var(--acc) 50%); border-radius: 8px 0 0 0;
-}
-
-/* ③ PDF出力ページ指定オーバーレイ */
-#pgrov { display: none; position: fixed; inset: 0; z-index: 500; background: #0009; align-items: center; justify-content: center; }
-#pgrov.on { display: flex; }
-#pgrpop { background: var(--pan); border: 1.5px solid var(--brd); border-radius: 13px; padding: 16px; width: 300px; display: flex; flex-direction: column; gap: 9px; }
-#pgrpop h3 { font-size: 13px; color: var(--tx2); }
-#pgrfld { background: var(--bg); border: 1.5px solid var(--brd); border-radius: 7px; color: var(--tx); font-size: 15px; padding: 8px; font-family: inherit; user-select: text; -webkit-user-select: text; }
-#pgrfld:focus { outline: none; border-color: var(--acc); }
-.pgr-qrow { display: flex; gap: 6px; }
-.pgr-q { flex: 1; height: 32px; border-radius: 6px; border: 1.5px solid var(--brd); background: var(--pan2); color: var(--tx2); font-size: 11px; cursor: pointer; font-weight: 600; }
-.pgr-q:active { background: var(--brd); }
-
-/* ===== 別窓 ===== */
-.bw {
-  position: fixed; z-index: 220; background: var(--pan);
-  border: 2.5px solid #00c8ff; border-radius: 11px;
-  box-shadow: 0 6px 28px #000b; display: flex; flex-direction: column;
-  min-width: 300px; min-height: 220px; overflow: hidden;
-}
-.bw-tb {
-  height: 32px; background: var(--pan2); display: flex; align-items: center;
-  gap: 4px; padding: 0 6px; cursor: grab; flex-shrink: 0;
-  border-bottom: 1.5px solid var(--brd);
-}
-.bw-tb span.bw-lbl { font-size: 11px; font-weight: 800; color: #00c8ff; flex-shrink: 0; }
-.bw-fn {
-  font-size: 10px; color: var(--tx2); max-width: 130px;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-shrink: 1;
-}
-.bw-navbtn {
-  height: 22px; padding: 0 5px; border: 1.5px solid var(--brd); background: var(--pan2);
-  color: var(--tx); border-radius: 4px; font-size: 11px; cursor: pointer; flex-shrink: 0;
-}
-.bw-navbtn:active { background: var(--brd); }
-.bw-pn { font-size: 10px; color: var(--tx2); flex-shrink: 0; white-space: nowrap; }
-.bw-zl { font-size: 10px; color: #00c8ff; flex-shrink: 0; white-space: nowrap; }
-.bw-openbtn {
-  height: 22px; padding: 0 6px; border: 1.5px solid var(--brd); background: var(--pan2);
-  color: var(--tx); border-radius: 4px; font-size: 11px; cursor: pointer; flex-shrink: 0;
-}
-.bw-openbtn:active { background: var(--acc); border-color: var(--acc); color: #fff; }
-.bw-close {
-  background: transparent; border: none; color: var(--tx2); font-size: 15px;
-  cursor: pointer; padding: 2px 4px; border-radius: 4px; flex-shrink: 0; margin-left: 2px;
-}
-.bw-close:active { color: var(--tx); }
-.bw-area {
-  flex: 1; overflow: hidden; position: relative; background: #555; touch-action: none;
-}
-.bw-cw { position: absolute; top: 0; left: 0; transform-origin: 0 0; background: #fff; }
-.bw-cvs { display: block; }
-.bw-dz {
-  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-  font-size: 13px; color: var(--tx2); cursor: pointer; background: var(--bg);
-  flex-direction: column; gap: 8px;
-}
-/* リサイズハンドル (右下・左下・左上) */
-.bw-rz { position: absolute; width: 22px; height: 22px; z-index: 5; }
-.bw-rz-se { bottom: 0; right: 0; cursor: se-resize;
-  background: linear-gradient(135deg, transparent 50%, #00c8ff 50%); border-radius: 0 0 8px 0; }
-.bw-rz-sw { bottom: 0; left: 0; cursor: sw-resize;
-  background: linear-gradient(225deg, transparent 50%, #00c8ff 50%); border-radius: 0 0 0 8px; }
-.bw-rz-nw { top: 32px; left: 0; cursor: nw-resize;
-  background: linear-gradient(315deg, transparent 50%, #00c8ff 50%); border-radius: 8px 0 0 0; }
-
-/* ===== タブバー ===== */
-#tabbar {
-  flex-shrink: 0; display: flex; align-items: stretch; min-height: 30px;
-  background: var(--pan2); border-bottom: 1.5px solid var(--brd);
-  overflow-x: auto; -webkit-overflow-scrolling: touch;
-}
-#tabbar::-webkit-scrollbar { display: none; }
-.shtab {
-  display: flex; align-items: center; gap: 4px;
-  padding: 0 6px 0 10px; min-width: 72px; max-width: 152px;
-  background: var(--pan2); color: var(--tx2); border-right: 1px solid var(--brd);
-  font-size: 11px; font-weight: 600; cursor: pointer;
-  white-space: nowrap; flex-shrink: 0;
-  user-select: none; -webkit-user-select: none; transition: background .1s;
-}
-.shtab:hover { background: var(--brd); color: var(--tx); }
-.shtab.active {
-  background: var(--bg); color: var(--tx);
-  box-shadow: inset 0 -2px 0 var(--acc);
-}
-.shtab-nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
-.shtab-x {
-  flex-shrink: 0; background: none; border: none; color: var(--tx2);
-  cursor: pointer; font-size: 12px; padding: 1px 3px; border-radius: 3px; line-height: 1;
-}
-.shtab-x:hover { background: var(--red); color: #fff; }
-.shtab-add {
-  padding: 0 13px; background: none; border: none; color: var(--tx2);
-  font-size: 20px; cursor: pointer; flex-shrink: 0; align-self: center;
-}
-.shtab-add:hover { color: var(--acc); }
 
 /* ===== 計算機 ===== */
 #calc {
@@ -342,6 +237,13 @@ body {
 }
 #toast.on { opacity: 1; }
 
+/* ===== 印刷 ===== */
+@media print {
+  #hdr, #calc, #selbtn, .swn, #szp { display: none !important; }
+  body { background: #fff !important; }
+  #ca { overflow: visible !important; position: static !important; }
+  #cw { position: static !important; transform: none !important; }
+}
 </style>
 </head>
 <body>
@@ -349,14 +251,16 @@ body {
 <div id="hdr">
   <!-- 行1: ロゴ / ファイル操作 / ツール操作 -->
   <div class="hr">
-    <span class="logo">M_Viewer <span style="font-size:10px">V0.02</span></span>
+    <span class="logo">M_Viewer <span style="font-size:10px">V07.02</span></span>
     <input type="file" id="fileInput" accept="application/pdf" style="display:none">
     <button class="btn" id="btn-open">📂 開く</button>
     <span id="fnlbl">ファイル未選択</span>
     <div class="vs"></div>
     <button class="btn" id="btn-undo">↩ 戻す</button>
-    <button class="btn on" id="btn-save">📤 PDF出力</button>
-    <button class="btn" id="calcbtn">🧮 計算機</button>
+    <button class="btn on" id="btn-save">💾 保存</button>
+    <button class="btn" id="btn-shot">📸 スクショ</button>
+    <button class="btn" id="btn-print">🖨 印刷</button>
+    <button class="btn" id="calcbtn">🧮 計算</button>
     <div class="sp"></div>
     <button class="btn rd" id="btn-close">✕ 閉じる</button>
   </div>
@@ -390,7 +294,6 @@ body {
       </div>
     </div>
     <button class="btn" id="t-sub">サブ窓</button>
-    <button class="btn" id="t-betsu">別窓</button>
     <div class="vs"></div>
     <div class="csw on" id="sw0" style="background:#cc2020" data-c="#cc2020"></div>
     <div class="csw"    id="sw1" style="background:#1a1a1a;border:2px solid #888" data-c="#1a1a1a"></div>
@@ -401,9 +304,6 @@ body {
     <span id="sz-v" class="sz-val">3</span>
   </div>
 </div>
-
-<!-- タブバー (シート切替) -->
-<div id="tabbar"></div>
 
 <!-- 太さパネル -->
 <div id="szp">
@@ -428,7 +328,7 @@ body {
   </div>
   <div id="dz">
     <div class="dzi">📄</div>
-    <div class="dzm">M_Viewer V0.02</div>
+    <div class="dzm">M_Viewer V07.02</div>
     <div class="dzs">
       📂 タップして選択 / ドラッグ＆ドロップ<br>
       ✏️ ペン・蛍光ペン: Apple Pencil専用<br>
@@ -472,22 +372,6 @@ body {
   </div>
 </div>
 
-<!-- ③ PDF出力ページ指定オーバーレイ -->
-<div id="pgrov">
-  <div id="pgrpop">
-    <h3>📤 PDF出力 — ページ指定</h3>
-    <div class="pgr-qrow">
-      <button class="pgr-q" id="pgr-cur">現在のページ</button>
-      <button class="pgr-q" id="pgr-all">全ページ</button>
-    </div>
-    <input id="pgrfld" type="text" placeholder="例: 1, 1-5, 1,3,5-8">
-    <div class="txbtns">
-      <button class="txb" id="pgrCancel" style="background:var(--pan2);color:var(--tx2)">キャンセル</button>
-      <button class="txb" id="pgrConfirm" style="background:var(--acc);color:#fff">📤 出力</button>
-    </div>
-  </div>
-</div>
-
 <!-- テキスト入力オーバーレイ -->
 <div id="txov">
   <div id="txpop">
@@ -515,7 +399,7 @@ const MAX_CANVAS  = 3600;  // GPU上限(A0対応)
 const MAX_SCALE   = 8;     // 最大800%
 const SAVE_DELAY  = 1200;  // 自動保存ディレイ(ms)
 const SAVE_RS     = 3;     // PDF保存時レンダリングスケール
-const PDF_MAX_DPR = 1.5;   // Retina対応最大DPR (iPad freeze 対策: 2→1.5)
+const PDF_MAX_DPR = 2;     // Retina対応最大DPR
 
 /* サブウィンドウ最大数 */
 const MAX_SUBWIN  = 5;
@@ -544,7 +428,7 @@ const HL_COLORS = [
 
 /* ツール別デフォルト太さ */
 const TOOL_DEFAULT_SIZES = {
-  pen:3, hl:3, eraser:20, text:3,   // [THIN2] defaults は元に戻し、lw/3 で細さ調整
+  pen:3, hl:3, eraser:20, text:3,
   arrow:2, rect:2, circle:2, line:2
 };
 
@@ -561,12 +445,9 @@ let penColor     = '#cc2020';
 let hlColor      = '#ffd700';
 let txX = 0, txY = 0;
 
-const subWindows  = [];
-let   swZIndex    = 200;
-const betsuWindows = []; // 別窓インスタンス管理
-let   bwZIndex    = 220; // 別窓 z-index (SubWin より前面)
+const subWindows = [];
+let   swZIndex   = 200;
 let   _fileHandle = null;
-
 
 /* ツール別太さ (実行中に変更される) */
 const toolSizes = { ...TOOL_DEFAULT_SIZES };
@@ -612,33 +493,16 @@ function safeKey(s) {
 }
 
 let _autoSaveTimer;
-/** IDB 保存・復元時に eraser ストロークを除去（蓄積による freeze 防止） */
-function _pruneEraserStrokes(strks) {
-  const result = {};
-  for (const [pg, arr] of Object.entries(strks || {})) {
-    const filtered = (arr || []).filter(s => s.type !== 'eraser');
-    if (filtered.length) result[pg] = filtered;
-  }
-  return result;
-}
-
 function schedSave() {
   clearTimeout(_autoSaveTimer);
   _autoSaveTimer = setTimeout(async () => {
     if (!App.pdfDoc || !App.origBuf) return;
-    // eraser ストロークを保存しない（IDB 蓄積 → 復元後の freeze 防止）
-    const rawStrokes = App.strokes;
-    const cleanStrokes = {};
-    for (const [pg, arr] of Object.entries(rawStrokes || {})) {
-      const filtered = (arr || []).filter(s => s.type !== 'eraser');
-      if (filtered.length) cleanStrokes[pg] = filtered;
-    }
     const data = {
       buf:     App.origBuf.slice(0),
       file:    App.fileName,
       strokes: (typeof structuredClone === 'function'
-                  ? structuredClone(cleanStrokes)
-                  : JSON.parse(JSON.stringify(cleanStrokes))),
+                  ? structuredClone(App.strokes)
+                  : JSON.parse(JSON.stringify(App.strokes))),
       page:    App.currentPage,
       scale:   App.scale,
       ts:      Date.now()
@@ -684,10 +548,9 @@ function drawLiveBezierSegment(ctx, pts, cur, sc) {
  * @param {number} sc   スケール
  * @param {number} invEZ 1/cssExtraZoom (省略時=1)
  */
-// [FIX-ZOOM-SIZE] invEZ は PDF保存呼出し互換のため残すが不使用。lw は sc 比例に統一
 function drawStroke(s, ctx, sc, invEZ = 1) {
   ctx.save();
-  const lw = s.size * sc / 3; // [THIN2] /3 で約1/3の細さに統一（ズーム比例は維持）
+  const lw = s.size * invEZ;
 
   if (s.type === 'eraser') {
     ctx.globalCompositeOperation = 'destination-out';
@@ -700,7 +563,7 @@ function drawStroke(s, ctx, sc, invEZ = 1) {
     ctx.globalCompositeOperation = 'source-over';
     ctx.globalAlpha   = s.type === 'hl' ? 0.38 : 1;
     ctx.strokeStyle   = s.color;
-    ctx.lineWidth     = s.type === 'hl' ? Math.max(lw * 4, 5 * sc / 3) : lw; // [THIN2] HL最小幅も /3
+    ctx.lineWidth     = s.type === 'hl' ? Math.max(lw * 4, 14 * invEZ) : lw;
     ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     const pts = s.points;
     if (pts && pts.length) {
@@ -717,9 +580,9 @@ function drawStroke(s, ctx, sc, invEZ = 1) {
 
   } else if (s.type === 'text') {
     ctx.fillStyle = s.color;
-    ctx.font = `bold ${Math.round(s.size * 6 * sc)}px 'Helvetica Neue',Arial,sans-serif`; // [FIX-ZOOM-SIZE]
+    ctx.font = `bold ${Math.round(s.size * 6)}px 'Helvetica Neue',Arial,sans-serif`;
     s.text.split('\n').forEach((line, i) =>
-      ctx.fillText(line, s.x * sc, s.y * sc + i * s.size * 7 * sc)); // [FIX-ZOOM-SIZE]
+      ctx.fillText(line, s.x * sc, s.y * sc + i * s.size * 7));
 
   } else {
     ctx.strokeStyle = s.color; ctx.lineWidth = lw; ctx.lineCap = 'round';
@@ -732,7 +595,7 @@ function drawStroke(s, ctx, sc, invEZ = 1) {
     } else if (s.type === 'line') {
       ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
     } else if (s.type === 'arrow') {
-      const hl  = Math.max(lw * 4, 12 * sc); // [FIX-ZOOM-SIZE] 矢印頭もscベース
+      const hl  = Math.max(lw * 4, 12);
       const ang = Math.atan2(y2-y1, x2-x1);
       ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
       ctx.beginPath();
@@ -744,92 +607,6 @@ function drawStroke(s, ctx, sc, invEZ = 1) {
     }
   }
   ctx.restore();
-}
-
-/**
- * ② アノテーション描画
- *    eraser ストロークは endDraw 時に即時削除するため配列に残らない
- *    → 常に単純描画パス（temp canvas 生成ゼロ・compositing なし）
- */
-function _drawAnnotations(ctx, strks, sc) {
-  if (!strks || !strks.length) return;
-  strks.forEach(s => drawStroke(s, ctx, sc));
-}
-
-/**
- * 消しゴム処理 (全消去対象タイプ対応版)
- *   pen/hl → _applyEraser で部分消去（ポイント削除）
- *   line/rect/circle/arrow → バウンディングボックス接触で図形全体を削除
- *   text → 削除しない
- * eraser ストロークは配列に保存せず即時削除 → compositing 不要 → redraw() が軽量
- */
-function _applyEraserAll(stroke, erPts, hitR) {
-  if (stroke.type === 'text') return [stroke]; // text は消去しない
-  // pen / hl : ポイント単位の部分消去
-  if ((stroke.type === 'pen' || stroke.type === 'hl') && stroke.points?.length) {
-    return _applyEraser(stroke, erPts, hitR);
-  }
-  // 図形 (line/rect/circle/arrow) : バウンディングボックス接触で全体削除
-  const bb = strokeBBox(stroke);
-  if (!bb) return [stroke];
-  // 消しゴム点列のいずれかが BB+hitR 内に入るか、BB中心への線分距離が範囲内なら削除
-  for (let i = 0; i < erPts.length; i++) {
-    const [ex, ey] = erPts[i];
-    if (ex >= bb.x1 - hitR && ex <= bb.x2 + hitR &&
-        ey >= bb.y1 - hitR && ey <= bb.y2 + hitR) return []; // 点がBBに接触
-    if (i > 0) {
-      const cx = (bb.x1 + bb.x2) / 2, cy = (bb.y1 + bb.y2) / 2;
-      const reach = hitR + Math.hypot(bb.x2 - bb.x1, bb.y2 - bb.y1) / 2;
-      if (_distPtSeg(cx, cy, erPts[i-1][0], erPts[i-1][1], ex, ey) < reach) return []; // 線分がBBに近い
-    }
-  }
-  return [stroke]; // 接触なし → 保持
-}
-
-/**
- * 消しゴム円内のポイントだけ除去し、残存部分を別ストロークとして返す（部分消去）
- * stroke全体削除ではなく「カーソル範囲内のポイントのみ」を消すことで当たり判定を正確化
- * @param {object}   penStroke - ペンストローク {points:[[x,y],...], size, ...}
- * @param {number[][]} erPts   - 消しゴム経路の座標列 (PDF座標)
- * @param {number}   hitR      - ヒット半径 (PDF座標単位) ← 視覚カーソル半径と完全一致させること
- * @returns {object[]}         - 残存セグメント配列（0個以上）
- */
-
-/** ペン点pから消しゴム線分a→bへの最短距離 (PDF座標) */
-function _distPtSeg(px, py, ax, ay, bx, by) {
-  const dx = bx-ax, dy = by-ay, len2 = dx*dx+dy*dy;
-  if (len2 === 0) return Math.hypot(px-ax, py-ay);
-  const t = Math.max(0, Math.min(1, ((px-ax)*dx+(py-ay)*dy)/len2));
-  return Math.hypot(px-(ax+t*dx), py-(ay+t*dy));
-}
-
-function _applyEraser(penStroke, erPts, hitR) {
-  // 各ペンポイントと消しゴム【線分】の最短距離で判定（点列のみより高精度）
-  const kept = penStroke.points.map(pp => {
-    const px = pp[0], py = pp[1];
-    if (erPts.length === 0) return pp;
-    // 1点目: 点との距離
-    if (Math.hypot(px-erPts[0][0], py-erPts[0][1]) < hitR) return null;
-    // 2点目以降: 各線分との最短距離
-    for (let i = 1; i < erPts.length; i++) {
-      if (_distPtSeg(px, py, erPts[i-1][0], erPts[i-1][1], erPts[i][0], erPts[i][1]) < hitR)
-        return null;
-    }
-    return pp;
-  });
-  // 連続する保持ポイントをセグメントに分割（消去ポイントで切断）
-  const result = [];
-  let seg = [];
-  for (const p of kept) {
-    if (p !== null) {
-      seg.push(p);
-    } else {
-      if (seg.length >= 2) result.push({ ...penStroke, points: [...seg] });
-      seg = [];
-    }
-  }
-  if (seg.length >= 2) result.push({ ...penStroke, points: [...seg] });
-  return result;
 }
 
 /**
@@ -861,15 +638,6 @@ function ptInPoly(px, py, poly) {
 
 /* ============================================================
    ページ回転補正 (PDF保存用)
-   PDF Rotate=R は「表示時に R°CW 回転する」の意味。
-   pdf.js は Rotate 分を適用済みの display canvas を生成する。
-   保存時は display→native 変換を適用してネイティブ座標系に戻す。
-   数学的根拠 (canvas y-down, native WxH → display):
-     rot=90 : native(x,y)→display(ph-y, x)  逆変換: display(X,Y)→native(Y, ph-X)
-              → translate(0, ph*rs) + rotate(-π/2)
-     rot=180: native(x,y)→display(pw-x,ph-y) 逆変換: translate(pw,ph) + rotate(π)
-     rot=270: native(x,y)→display(y, pw-x)   逆変換: display(X,Y)→native(pw-Y, X)
-              → translate(pw*rs, 0) + rotate(+π/2)
    ============================================================ */
 function rotateCanvas(src, jsPage, pw, ph, rs) {
   const rot = jsPage.rotate || 0;
@@ -877,9 +645,9 @@ function rotateCanvas(src, jsPage, pw, ph, rs) {
   const dc = document.createElement('canvas');
   dc.width = Math.round(pw * rs); dc.height = Math.round(ph * rs);
   const ctx = dc.getContext('2d');
-  if      (rot === 90)  { ctx.translate(0,      ph*rs); ctx.rotate(-Math.PI / 2); } // 90°CCW (display→native)
-  else if (rot === 180) { ctx.translate(pw*rs, ph*rs);  ctx.rotate( Math.PI);     } // 180°   (unchanged)
-  else if (rot === 270) { ctx.translate(pw*rs, 0);      ctx.rotate( Math.PI / 2); } // 90°CW  (display→native)
+  if      (rot === 90)  ctx.transform(0,  1,  1,  0, 0,       0);
+  else if (rot === 180) ctx.transform(-1, 0,  0,  1, pw*rs,   0);
+  else if (rot === 270) ctx.transform(0, -1, -1,  0, pw*rs, ph*rs);
   ctx.drawImage(src, 0, 0);
   return dc;
 }
@@ -936,9 +704,7 @@ class SubWin {
         <canvas class="swn-sel" style="position:absolute;top:0;left:0;pointer-events:none;z-index:5"></canvas>
         <span class="swn-zl"></span>
       </div>
-      <div class="swn-rz"></div>
-      <div class="swn-rz-sw"></div>
-      <div class="swn-rz-nw"></div>`;
+      <div class="swn-rz"></div>`;
 
     this.el      = el;
     this.body    = el.querySelector('.swn-body');
@@ -955,9 +721,7 @@ class SubWin {
       { capture: true, passive: true });
 
     this._bindDrag  (el.querySelector('.swn-tb'));
-    this._bindResize(el.querySelector('.swn-rz'),    'se'); // 右下（既存）
-    this._bindResize(el.querySelector('.swn-rz-sw'), 'sw'); // 左下（追加）
-    this._bindResize(el.querySelector('.swn-rz-nw'), 'nw'); // 左上（追加）
+    this._bindResize(el.querySelector('.swn-rz'));
     this._bindInput();
 
     document.body.appendChild(el);
@@ -1001,7 +765,7 @@ class SubWin {
       this._annCvs.width = vp.width; this._annCvs.height = vp.height;
       const actx = this._annCvs.getContext('2d');
       actx.clearRect(0, 0, vp.width, vp.height);
-      _drawAnnotations(actx, this.strokes[this.pageNum] || [], sc); // ② 消しゴムは text 以外すべて対象
+      (this.strokes[this.pageNum] || []).forEach(s => drawStroke(s, actx, sc));
       this._annDirty = false;
     }
 
@@ -1132,7 +896,7 @@ class SubWin {
       this.ctx.globalCompositeOperation = 'source-over';
       this.ctx.globalAlpha  = s.type === 'hl' ? 0.38 : 1;
       this.ctx.strokeStyle  = s.color;
-      this.ctx.lineWidth    = s.type === 'hl' ? Math.max(s.size*4, 5) * sc / 3 : s.size * sc / 3; // [THIN2]
+      this.ctx.lineWidth    = s.type === 'hl' ? Math.max(s.size*4, 14) : s.size;
       this.ctx.lineCap = 'round'; this.ctx.lineJoin = 'round';
       this.ctx.beginPath();
       drawLiveBezierSegment(this.ctx, s.points, [p.x, p.y], sc);
@@ -1154,7 +918,7 @@ class SubWin {
       this.selCtx.save();
       this.selCtx.strokeStyle = '#888'; this.selCtx.lineWidth = 1.5;
       this.selCtx.setLineDash([4, 2]);
-      this.selCtx.beginPath(); this.selCtx.arc(bx, by, s.size * 2 * sc / 3, 0, Math.PI*2); this.selCtx.stroke(); // [THIN2]
+      this.selCtx.beginPath(); this.selCtx.arc(bx, by, s.size * 2, 0, Math.PI*2); this.selCtx.stroke();
       this.selCtx.restore();
 
     } else {
@@ -1168,14 +932,7 @@ class SubWin {
     this.isDrawing = false;
     if (!this.strokes[this.pageNum]) this.strokes[this.pageNum] = [];
     const s = this.curStroke;
-    if (s.type === 'eraser') {
-      // 全タイプを即時削除・eraser を配列に保存しない
-      const r = (s.size || 20) * 2 / 3, erPts = s.points || [];
-      this.strokes[this.pageNum] = (this.strokes[this.pageNum] || [])
-        .flatMap(st => _applyEraserAll(st, erPts, r));
-    } else {
-      this.strokes[this.pageNum].push({ ...s, points: s.points ? [...s.points] : undefined });
-    }
+    this.strokes[this.pageNum].push({ ...s, points: s.points ? [...s.points] : undefined });
     this.curStroke = null; this._annDirty = true;
     if (this.selCvs) this.selCtx.clearRect(0, 0, this.selCvs.width, this.selCvs.height);
     this.render(); App.redraw(); schedSave();
@@ -1214,32 +971,24 @@ class SubWin {
   }
 
   /* リサイズ */
-  _bindResize(handle, corner = 'se') {
-    let dragging = false, ox = 0, oy = 0, w0 = 0, h0 = 0, lx0 = 0, ty0 = 0, initSc = 1;
+  _bindResize(handle) {
+    let dragging = false, ox = 0, oy = 0, w0 = 0, h0 = 0, initSc = 1;
     const onStart = e => {
       dragging = true;
       const s = e.touches ? e.touches[0] : e;
       ox = s.clientX; oy = s.clientY;
-      const r = this.el.getBoundingClientRect();
-      w0 = r.width; h0 = r.height; lx0 = r.left; ty0 = r.top;
-      initSc = this.innerScale;
+      w0 = this.winW; h0 = this.winH; initSc = this.innerScale;
       e.stopPropagation(); e.preventDefault();
     };
     const onMove = e => {
       if (!dragging) return;
       const s = e.touches ? e.touches[0] : e;
-      const dx = s.clientX - ox, dy = s.clientY - oy;
-      let nW = w0, nH = h0;
-      if      (corner === 'se') { nW = Math.max(180, w0 + dx); nH = Math.max(160, h0 + dy); }
-      else if (corner === 'sw') { nW = Math.max(180, w0 - dx); nH = Math.max(160, h0 + dy);
-        this.el.style.left = (lx0 + w0 - nW) + 'px'; }
-      else if (corner === 'nw') { nW = Math.max(180, w0 - dx); nH = Math.max(160, h0 - dy);
-        this.el.style.left = (lx0 + w0 - nW) + 'px';
-        this.el.style.top  = (ty0 + h0 - nH) + 'px'; }
-      const k = Math.max(0.1, (nW - 4) / Math.max(1, w0 - 4));
-      this.winW = nW; this.winH = nH;
-      this.el.style.width  = nW + 'px';
-      this.el.style.height = nH + 'px';
+      const newW = Math.max(180, w0 + s.clientX - ox);
+      const newH = Math.max(160, h0 + s.clientY - oy);
+      const k = Math.max(0.1, (newW - 4) / Math.max(1, w0 - 4));
+      this.winW = newW; this.winH = newH;
+      this.el.style.width  = newW + 'px';
+      this.el.style.height = newH + 'px';
       this.innerScale = Math.max(0.2, Math.min(8, initSc * k));
       this._pdfCache = null;
       clearTimeout(this._resizeTimer);
@@ -1278,366 +1027,6 @@ class SubWin {
 }
 
 /* ============================================================
-   別窓 (BetsuWin) — メインPDFとは独立した PDF ビューア
-   ・独自 pdfDoc / ページ状態 / ズームを保持
-   ・SubWin・メインApp の状態と完全独立
-   ・ページキャッシュ 1枚
-   ・BW_MAX_CANVAS : renderScale 論理上限 (cssEZ 発生を抑えるため 3200)
-   ・BW_HI_CANVAS  : 実レンダリング上限 (Retina/高DPI 対応、メイン画面と統一)
-   ============================================================ */
-const BW_MAX_CANVAS = 3200; // 別窓 renderScale 上限 (旧: 2048 → 高解像度化)
-const BW_HI_CANVAS  = 4096; // 別窓 実レンダリング上限 (Retina/高DPI用、メイン画面と統一)
-const BW_MAX_WIN    = 3;    // 最大別窓数
-
-class BetsuWin {
-  constructor(x, y, w, h) {
-    this.pdfDoc       = null;
-    this.fileName     = '';
-    this.curPage      = 1;
-    this.totalPages   = 0;
-    this.scale        = 1;
-    this.renderScale  = 1;
-    this.cssEZ        = 1;
-    this.panX         = 8;
-    this.panY         = 8;
-    this.renderVer    = 0;
-    this._pageObj     = null; // 1ページキャッシュ
-    this._cachedPgNum = 0;
-
-    this.winW   = w || 500;
-    this.winH   = h || 380;
-    this.sx     = x || 90;
-    this.sy     = y || 90;
-    this.pinch  = null;
-    this.panSt  = null;
-    this._cleanups = [];
-
-    this._build();
-  }
-
-  /* ---- DOM構築 ---- */
-  _build() {
-    const el = document.createElement('div');
-    el.className = 'bw';
-    el.style.cssText =
-      `left:${this.sx}px;top:${this.sy}px;width:${this.winW}px;height:${this.winH}px;z-index:${++bwZIndex}`;
-
-    el.innerHTML = `
-      <div class="bw-tb">
-        <span class="bw-lbl">📄 別窓</span>
-        <span class="bw-fn"></span>
-        <button class="bw-navbtn bw-prev">◀</button>
-        <span class="bw-pn">-/-</span>
-        <button class="bw-navbtn bw-next">▶</button>
-        <span class="bw-zl"></span>
-        <div style="flex:1"></div>
-        <button class="bw-openbtn">📂 開く</button>
-        <button class="bw-close">✕</button>
-      </div>
-      <div class="bw-area">
-        <div class="bw-cw"><canvas class="bw-cvs"></canvas></div>
-        <div class="bw-dz">📄 別窓<br><small>「📂 開く」でPDFを読み込む</small></div>
-      </div>
-      <div class="bw-rz bw-rz-se"></div>
-      <div class="bw-rz bw-rz-sw"></div>
-      <div class="bw-rz bw-rz-nw"></div>`;
-
-    this.el     = el;
-    this.tb     = el.querySelector('.bw-tb');
-    this.fnEl   = el.querySelector('.bw-fn');
-    this.pnEl   = el.querySelector('.bw-pn');
-    this.zlEl   = el.querySelector('.bw-zl');
-    this.area   = el.querySelector('.bw-area');
-    this.cw     = el.querySelector('.bw-cw');
-    this.cvs    = el.querySelector('.bw-cvs');
-    this.ctx    = this.cvs.getContext('2d');
-    this.dz     = el.querySelector('.bw-dz');
-
-    el.querySelector('.bw-close')  .addEventListener('pointerdown', e => { e.stopPropagation(); this.close(); });
-    el.querySelector('.bw-openbtn').addEventListener('click', () => this._openFilePicker());
-    el.querySelector('.bw-prev')   .addEventListener('click', () => this._gotoPage(-1));
-    el.querySelector('.bw-next')   .addEventListener('click', () => this._gotoPage(+1));
-    this.dz                        .addEventListener('click', () => this._openFilePicker());
-
-    // 前面表示
-    el.addEventListener('pointerdown', () => { el.style.zIndex = ++bwZIndex; }, { capture: true, passive: true });
-
-    this._bindDrag(this.tb);
-    this._bindResize(el.querySelector('.bw-rz-se'), 'se');
-    this._bindResize(el.querySelector('.bw-rz-sw'), 'sw');
-    this._bindResize(el.querySelector('.bw-rz-nw'), 'nw');
-    this._bindAreaInput();
-
-    document.body.appendChild(el);
-  }
-
-  /* ---- ファイル選択 ---- */
-  _openFilePicker() {
-    const inp = document.createElement('input');
-    inp.type = 'file'; inp.accept = 'application/pdf';
-    inp.onchange = async e => { const f = e.target.files[0]; if (f) await this.loadPDF(f); };
-    inp.click();
-  }
-
-  /* ---- PDF 読み込み ---- */
-  async loadPDF(file) {
-    try {
-      const buf = await file.arrayBuffer();
-      // 既存 pdfDoc を破棄してメモリ解放
-      if (this.pdfDoc) { try { this.pdfDoc.destroy(); } catch(_) {} }
-      this.pdfDoc       = await pdfjsLib.getDocument({ data: buf.slice(0) }).promise;
-      this.fileName     = file.name;
-      this.totalPages   = this.pdfDoc.numPages;
-      this.curPage      = 1;
-      this._pageObj     = null;
-      this._cachedPgNum = 0;
-      this.fnEl.textContent = file.name.length > 22 ? '…' + file.name.slice(-20) : file.name;
-      this.dz.style.display = 'none';
-      await this._fitPage();
-      await this.renderPage(1);
-    } catch(e) { console.error(e); showToast('別窓: 読み込み失敗'); }
-  }
-
-  /* ---- フィット ---- */
-  async _fitPage() {
-    const page = await this._getPage(this.curPage);
-    const vp1  = page.getViewport({ scale: 1 });
-    const aW   = this.area.clientWidth  - 16;
-    const aH   = this.area.clientHeight - 16;
-    this.scale = Math.max(0.1, Math.min(aW / vp1.width, aH / vp1.height));
-    this.panX  = 8; this.panY = 8;
-  }
-
-  /* ---- ページオブジェクト取得 (1枚キャッシュ) ---- */
-  async _getPage(num) {
-    if (this._cachedPgNum === num && this._pageObj) return this._pageObj;
-    this._pageObj     = await this.pdfDoc.getPage(num);
-    this._cachedPgNum = num;
-    return this._pageObj;
-  }
-
-  /* ---- ページ描画 ---- */
-  async renderPage(num) {
-    if (!this.pdfDoc) return;
-    const ver  = ++this.renderVer;
-    const page = await this._getPage(num);
-    const vp1  = page.getViewport({ scale: 1 });
-    const maxD = Math.max(vp1.width, vp1.height);
-
-    // renderScale: BW_MAX_CANVAS を上限に cssEZ 発生を最小化
-    this.renderScale = Math.min(this.scale, BW_MAX_CANVAS / maxD);
-    this.cssEZ       = this.scale / this.renderScale;
-
-    const vp    = page.getViewport({ scale: this.renderScale });
-    const dpr   = Math.min(window.devicePixelRatio || 1, 2);
-    // hiRS: BW_HI_CANVAS を上限に実レンダリング解像度を確保 (Retina対応)
-    const hiRS  = Math.min(this.renderScale * dpr, (BW_HI_CANVAS - 4) / maxD);
-    const hiVP  = page.getViewport({ scale: hiRS });
-
-    // オフスクリーン描画
-    const off    = document.createElement('canvas');
-    off.width    = hiVP.width; off.height = hiVP.height;
-    const offCtx = off.getContext('2d');
-    offCtx.fillStyle = '#fff'; offCtx.fillRect(0, 0, off.width, off.height);
-    await page.render({ canvasContext: offCtx, viewport: hiVP }).promise;
-
-    if (ver !== this.renderVer) return; // キャンセル判定
-
-    this.cvs.width  = hiVP.width;  this.cvs.height = hiVP.height;
-    this.cvs.style.width  = vp.width  + 'px';
-    this.cvs.style.height = vp.height + 'px';
-    this.ctx.drawImage(off, 0, 0);
-
-    this._clampPan();
-    this._updateTransform();
-    this._updateNav();
-  }
-
-  _updateTransform() {
-    this.cw.style.transformOrigin = '0 0';
-    this.cw.style.transform = Math.abs(this.cssEZ - 1) > 0.0005
-      ? `translate(${this.panX}px,${this.panY}px) scale(${this.cssEZ})`
-      : `translate(${this.panX}px,${this.panY}px)`;
-  }
-
-  _updateNav() {
-    this.pnEl.textContent = this.totalPages ? `${this.curPage}/${this.totalPages}` : '-/-';
-    this.zlEl.textContent = this.pdfDoc ? Math.round(this.scale * 100) + '%' : '';
-  }
-
-  _visualW() { return (parseFloat(this.cvs.style.width)  || this.cvs.width)  * this.cssEZ; }
-  _visualH() { return (parseFloat(this.cvs.style.height) || this.cvs.height) * this.cssEZ; }
-
-  _clampPan() {
-    const mg = 40, aW = this.area.clientWidth || 1, aH = this.area.clientHeight || 1;
-    this.panX = Math.max(-(this._visualW() - mg), Math.min(aW - mg, this.panX));
-    this.panY = Math.max(-(this._visualH() - mg), Math.min(aH - mg, this.panY));
-  }
-
-  async _gotoPage(d) {
-    if (!this.pdfDoc) return;
-    const n = this.curPage + d;
-    if (n < 1 || n > this.totalPages) return;
-    this.curPage = n; await this.renderPage(n);
-  }
-
-  /* ---- タッチ / ホイール入力 ---- */
-  _bindAreaInput() {
-    const area = this.area;
-
-    area.addEventListener('touchstart', e => {
-      if (!this.pdfDoc) return; e.preventDefault();
-      if (e.touches.length >= 2) { this.panSt = null; this._startPinch(e.touches); return; }
-      this._startPan(e.touches[0]);
-    }, { passive: false });
-
-    area.addEventListener('touchmove', e => {
-      e.preventDefault();
-      if (e.touches.length >= 2 && this.pinch) { this._movePinch(e.touches); return; }
-      if (this.panSt) this._movePan(e.touches[0]);
-    }, { passive: false });
-
-    area.addEventListener('touchend', e => {
-      if (this.pinch && e.touches.length < 2) { this._endPinch(); return; }
-      if (this.panSt) this.panSt = null;
-    });
-
-    area.addEventListener('wheel', e => {
-      if (!this.pdfDoc) return; e.preventDefault();
-      const r  = e.deltaY < 0 ? 1.15 : 0.87;
-      const ar = this.area.getBoundingClientRect();
-      const vx = e.clientX - ar.left, vy = e.clientY - ar.top;
-      const pX = (vx - this.panX) / this.scale, pY = (vy - this.panY) / this.scale;
-      this.scale = Math.max(0.1, Math.min(8, this.scale * r));
-      this.panX  = vx - pX * this.scale; this.panY = vy - pY * this.scale;
-      this._clampPan(); this.renderPage(this.curPage);
-    }, { passive: false });
-  }
-
-  /* ---- ピンチ (軽量CSSプレビュー → endで再描画) ---- */
-  _pd(t) { const dx=t[1].clientX-t[0].clientX,dy=t[1].clientY-t[0].clientY; return Math.sqrt(dx*dx+dy*dy); }
-  _pm(t) { return { x:(t[0].clientX+t[1].clientX)/2, y:(t[0].clientY+t[1].clientY)/2 }; }
-
-  _startPinch(t) {
-    const m = this._pm(t), ar = this.area.getBoundingClientRect();
-    const bx = m.x - ar.left, by = m.y - ar.top;
-    this.pinch = { d0: this._pd(t), s0: this.scale, target: this.scale,
-                   pdfX: (bx - this.panX) / this.scale, pdfY: (by - this.panY) / this.scale };
-  }
-  _movePinch(t) {
-    const p = this.pinch, r = this._pd(t) / p.d0;
-    const m = this._pm(t), ar = this.area.getBoundingClientRect();
-    const mx = m.x - ar.left, my = m.y - ar.top;
-    p.target = Math.max(0.1, Math.min(8, p.s0 * r));
-    p.lastMx = mx; p.lastMy = my;
-    this.panX = mx - p.pdfX * p.target; this.panY = my - p.pdfY * p.target;
-    // 軽量プレビュー (CSS scale のみ)
-    const ez = p.target / this.renderScale;
-    this.cw.style.transform = `translate(${this.panX}px,${this.panY}px) scale(${ez})`;
-    this.zlEl.textContent = Math.round(p.target * 100) + '%';
-  }
-  _endPinch() {
-    if (!this.pinch) return;
-    this.scale = this.pinch.target; this.pinch = null;
-    this.renderPage(this.curPage);
-  }
-
-  /* ---- パン ---- */
-  _startPan(t) { this.panSt = { x0: t.clientX, y0: t.clientY, px0: this.panX, py0: this.panY }; }
-  _movePan(t) {
-    if (!this.panSt) return;
-    this.panX = this.panSt.px0 + (t.clientX - this.panSt.x0);
-    this.panY = this.panSt.py0 + (t.clientY - this.panSt.y0);
-    this._clampPan(); this._updateTransform();
-  }
-
-  /* ---- ドラッグ移動 ---- */
-  _bindDrag(handle) {
-    let d = false, ox=0, oy=0, ex=0, ey=0;
-    const onS = e => {
-      if (e.target.closest('.bw-close,.bw-openbtn,.bw-prev,.bw-next')) return;
-      d = true; const s = e.touches ? e.touches[0] : e;
-      ox = s.clientX; oy = s.clientY;
-      const r = this.el.getBoundingClientRect(); ex = r.left; ey = r.top; e.preventDefault();
-    };
-    const onM = e => {
-      if (!d) return; const s = e.touches ? e.touches[0] : e;
-      this.el.style.left = (ex + s.clientX - ox) + 'px';
-      this.el.style.top  = (ey + s.clientY - oy) + 'px';
-    };
-    const onE = () => { d = false; };
-    handle.addEventListener('touchstart', onS, { passive: false });
-    handle.addEventListener('mousedown', onS);
-    document.addEventListener('touchmove', onM, { passive: true });
-    document.addEventListener('mousemove', onM);
-    document.addEventListener('touchend', onE);
-    document.addEventListener('mouseup', onE);
-    this._cleanups.push(() => {
-      document.removeEventListener('touchmove', onM);
-      document.removeEventListener('mousemove', onM);
-      document.removeEventListener('touchend', onE);
-      document.removeEventListener('mouseup', onE);
-    });
-  }
-
-  /* ---- リサイズ (右下 se / 左下 sw / 左上 nw) ---- */
-  _bindResize(handle, corner) {
-    let d=false, ox=0, oy=0, w0=0, h0=0, lx0=0, ly0=0;
-    const onS = e => {
-      d = true; const s = e.touches ? e.touches[0] : e;
-      ox = s.clientX; oy = s.clientY;
-      const r = this.el.getBoundingClientRect();
-      w0=r.width; h0=r.height; lx0=r.left; ly0=r.top;
-      e.stopPropagation(); e.preventDefault();
-    };
-    const onM = e => {
-      if (!d) return; const s = e.touches ? e.touches[0] : e;
-      const dx = s.clientX - ox, dy = s.clientY - oy;
-      let nW=w0, nH=h0, nL=lx0, nT=ly0;
-      if      (corner === 'se') { nW = Math.max(300, w0+dx); nH = Math.max(220, h0+dy); }
-      else if (corner === 'sw') { nW = Math.max(300, w0-dx); nH = Math.max(220, h0+dy); nL = lx0+w0-nW; }
-      else if (corner === 'nw') { nW = Math.max(300, w0-dx); nH = Math.max(220, h0-dy); nL = lx0+w0-nW; nT = ly0+h0-nH; }
-      this.el.style.width  = nW + 'px'; this.el.style.height = nH + 'px';
-      this.el.style.left   = nL + 'px'; this.el.style.top    = nT + 'px';
-      this.winW = nW; this.winH = nH;
-      clearTimeout(this._rzTimer);
-      this._rzTimer = setTimeout(() => this.renderPage(this.curPage), 80);
-    };
-    const onE = () => { d = false; };
-    handle.addEventListener('touchstart', onS, { passive: false });
-    handle.addEventListener('mousedown', onS);
-    document.addEventListener('touchmove', onM, { passive: true });
-    document.addEventListener('mousemove', onM);
-    document.addEventListener('touchend', onE);
-    document.addEventListener('mouseup', onE);
-    this._cleanups.push(() => {
-      document.removeEventListener('touchmove', onM);
-      document.removeEventListener('mousemove', onM);
-      document.removeEventListener('touchend', onE);
-      document.removeEventListener('mouseup', onE);
-    });
-  }
-
-  /* ---- クローズ (メモリ解放) ---- */
-  close() {
-    this._cleanups.forEach(fn => fn()); this._cleanups = [];
-    if (this.pdfDoc) { try { this.pdfDoc.destroy(); } catch(_) {} this.pdfDoc = null; }
-    document.body.removeChild(this.el);
-    const i = betsuWindows.indexOf(this); if (i >= 0) betsuWindows.splice(i, 1);
-  }
-}
-
-/** 別窓を開く (最大 BW_MAX_WIN 個まで) */
-function openBetsuWin() {
-  if (betsuWindows.length >= BW_MAX_WIN) {
-    showToast(`別窓は最大${BW_MAX_WIN}つです`); return;
-  }
-  const offset = betsuWindows.length * 28;
-  const bw = new BetsuWin(80 + offset, 80 + offset, 520, 400);
-  betsuWindows.push(bw);
-}
-
-/* ============================================================
    メインアプリ
    ============================================================ */
 const App = (() => {
@@ -1657,8 +1046,6 @@ const App = (() => {
   let strokes    = {};
   let renderScale = 1, cssExtraZoom = 1;
   let curStroke  = null, isDrawing = false, lastX = 0, lastY = 0;
-  let _wheelTimer = null;  // wheel連打 debounce 用
-  let _offscr     = null;  // offscreen canvas 再利用キャッシュ
   let pinch      = null, panSt    = null;
   let selectedIdx = [], selPath = [];
   let subRect    = null;
@@ -1719,14 +1106,7 @@ const App = (() => {
     const pdfX = (vx - panX) / scale, pdfY = (vy - panY) / scale;
     scale = Math.max(0.2, Math.min(MAX_SCALE, scale * r));
     panX  = vx - pdfX * scale; panY = vy - pdfY * scale;
-    clampPan();
-    // CSS プレビューで即時反映（renderPage は debounce して連打を防止）
-    const previewEZ = scale / renderScale;
-    cwEl.style.transformOrigin = '0 0';
-    cwEl.style.transform = `translate(${panX}px,${panY}px) scale(${previewEZ})`;
-    document.getElementById('zlbl').textContent = Math.round(scale * 100) + '%';
-    clearTimeout(_wheelTimer);
-    _wheelTimer = setTimeout(() => renderPage(curPage), 150);
+    clampPan(); renderPage(curPage);
   }, { passive: false });
 
   function onTouchStart(e) {
@@ -1872,7 +1252,7 @@ const App = (() => {
       annCtx.globalCompositeOperation = 'source-over';
       annCtx.globalAlpha = s.type === 'hl' ? 0.38 : 1;
       annCtx.strokeStyle = s.color;
-      annCtx.lineWidth   = s.type === 'hl' ? Math.max(s.size*4, 5) * sc / 3 : s.size * sc / 3; // [THIN2]
+      annCtx.lineWidth   = s.type === 'hl' ? Math.max(s.size*4*invEZ, 14*invEZ) : s.size*invEZ;
       annCtx.lineCap = 'round'; annCtx.lineJoin = 'round';
       annCtx.beginPath();
       drawLiveBezierSegment(annCtx, s.points, [p.x, p.y], sc);
@@ -1887,15 +1267,11 @@ const App = (() => {
       ovlCtx.strokeStyle = '#888'; ovlCtx.lineWidth = Math.max(1, 1.5*invEZ);
       ovlCtx.setLineDash([4*invEZ, 2*invEZ]);
       ovlCtx.beginPath();
-      ovlCtx.arc(p.x*sc, p.y*sc, s.size*2*sc/3, 0, Math.PI*2); // [THIN2] カーソルも/3
+      ovlCtx.arc(p.x*sc, p.y*sc, s.size*2*invEZ, 0, Math.PI*2);
       ovlCtx.stroke(); ovlCtx.restore();
 
     } else {
-      // 図形プレビューを ovlCvs へ描画（全注釈 redraw を回避 → touchmove 軽量化）
-      s.x2 = p.x; s.y2 = p.y;
-      ovlCtx.clearRect(0, 0, ovlCvs.width, ovlCvs.height);
-      drawSubOverlays();
-      drawStroke(s, ovlCtx, sc);
+      s.x2 = p.x; s.y2 = p.y; redraw(); drawStroke(s, annCtx, sc, invEZ);
     }
   }
 
@@ -1923,23 +1299,7 @@ const App = (() => {
       }
       subRect = null;
       ovlCtx.clearRect(0, 0, ovlCvs.width, ovlCvs.height);
-      setTool('pen'); return; // サブ窓作成後は常にペンモードへ復帰
-    }
-    // ② 消しゴム: 全タイプを即時削除（eraser を配列に保存しない）
-    //    → _drawAnnotations が常に単純パス → temp canvas 生成ゼロ → freeze しない
-    //    pen/hl → _applyEraser で部分削除
-    //    shapes → _applyEraserAll で全体削除
-    //    text   → 保護
-    if (curStroke?.type === 'eraser') {
-      const er = curStroke;
-      const r  = (er.size || 20) * 2 / 3;
-      const erPts = er.points || [];
-      strokes[curPage] = (strokes[curPage] || []).flatMap(s => _applyEraserAll(s, erPts, r));
-      curStroke = null;
-      ovlCtx.clearRect(0, 0, ovlCvs.width, ovlCvs.height);
-      redraw(); drawSelOv();
-      subWindows.forEach(sw => sw.update(strokes, curPage));
-      schedSave(); return;
+      setTool(prevTool); return;
     }
     if (currentTool === 'eraser') drawSelOv();
     if (!curStroke) return;
@@ -2067,7 +1427,7 @@ const App = (() => {
 
   function redraw() {
     annCtx.clearRect(0, 0, annCvs.width, annCvs.height);
-    _drawAnnotations(annCtx, strokes[curPage] || [], renderScale); // ② 消しゴムは text 以外すべて対象
+    (strokes[curPage] || []).forEach(s => drawStroke(s, annCtx, renderScale, 1/cssExtraZoom));
     drawSelOv();
   }
 
@@ -2090,12 +1450,9 @@ const App = (() => {
     const hiRS   = Math.min(renderScale * dpr, (4096 - 4) / maxDim);
     const hiVP   = page.getViewport({ scale: hiRS });
 
-    // offscreen canvas を再利用（サイズ変更時のみ再生成して毎回の大型確保を回避）
-    if (!_offscr || _offscr.width !== hiVP.width || _offscr.height !== hiVP.height) {
-      _offscr = document.createElement('canvas');
-      _offscr.width = hiVP.width; _offscr.height = hiVP.height;
-    }
-    const offCtx = _offscr.getContext('2d');
+    const offscr = document.createElement('canvas');
+    offscr.width = hiVP.width; offscr.height = hiVP.height;
+    const offCtx = offscr.getContext('2d');
     offCtx.fillStyle = '#ffffff'; offCtx.fillRect(0, 0, hiVP.width, hiVP.height);
     await page.render({ canvasContext: offCtx, viewport: hiVP }).promise;
 
@@ -2105,7 +1462,7 @@ const App = (() => {
     pdfCvs.style.width  = vp.width  + 'px';
     pdfCvs.style.height = vp.height + 'px';
     [annCvs, ovlCvs].forEach(c => { c.width = vp.width; c.height = vp.height; });
-    pdfCtx.drawImage(_offscr, 0, 0);
+    pdfCtx.drawImage(offscr, 0, 0);
     redraw(); clearSel(); clampPan();
     requestAnimationFrame(() => { clampPan(); updateTransform(); });
 
@@ -2130,11 +1487,10 @@ const App = (() => {
       cwEl.style.display = 'block';
 
       const saved = await IDB.get('f:' + safeKey(file.name));
-      strokes = _pruneEraserStrokes(saved?.strokes || {});
+      strokes = saved?.strokes || {};
       await renderPage(1); await fit();
       if (saved?.strokes && Object.keys(saved.strokes).length > 0)
         showToast('📝 書き込みデータを復元しました');
-      _postLoadFn?.(); // シートタブへ同期 (シートマネージャーが登録)
     } catch(e) { showToast('読み込みに失敗しました'); console.error(e); }
     showLoading(false);
   }
@@ -2198,7 +1554,7 @@ const App = (() => {
     pdfDoc     = await pdfjsLib.getDocument({ data: saved.buf.slice(0) }).promise;
     totalPages = pdfDoc.numPages;
     document.getElementById('tpn').textContent = totalPages;
-    strokes    = _pruneEraserStrokes(saved.strokes || {});
+    strokes    = saved.strokes || {};
     curPage    = saved.page || 1; scale = saved.scale || 1;
     panX = 16; panY = 16; renderScale = 1; cssExtraZoom = 1;
     document.getElementById('dz').style.display = 'none';
@@ -2206,46 +1562,9 @@ const App = (() => {
     await renderPage(curPage); centerCanvas();
   }
 
-  /* ---- タブ連携: 状態保存・復元 ---- */
-  let _postLoadFn = null; // ファイル読み込み後フック (シートマネージャーが設定)
-
-  /** 現在のApp状態スナップショットを返す (参照渡し・コピーなし) */
-  function saveState() {
-    return { pdfDoc, origBuf, fileName, curPage, totalPages,
-             scale, renderScale, cssExtraZoom, panX, panY, strokes };
-  }
-
-  /** シート切替時にApp状態を一括復元してページ再描画 */
-  async function loadState(sh) {
-    pdfDoc       = sh.pdfDoc;       origBuf    = sh.origBuf;
-    fileName     = sh.fileName || ''; curPage  = sh.curPage || 1;
-    totalPages   = sh.totalPages || 0; scale   = sh.scale  || 1;
-    renderScale  = sh.renderScale  || 1; cssExtraZoom = sh.cssExtraZoom || 1;
-    panX         = sh.panX ?? 16;   panY       = sh.panY ?? 16;
-    strokes      = sh.strokes || {}; pageCache.clear();
-    selectedIdx  = []; selPath = [];
-
-    document.getElementById('fnlbl').textContent = fileName || 'ファイル未選択';
-    document.getElementById('tpn').textContent   = totalPages || '0';
-    document.getElementById('pgn').value         = curPage;
-
-    if (pdfDoc) {
-      document.getElementById('dz').style.display = 'none';
-      cwEl.style.display = 'block';
-      await renderPage(curPage);
-    } else {
-      document.getElementById('dz').style.display = '';
-      cwEl.style.display = 'none';
-      document.getElementById('zlbl').textContent = '--';
-      [pdfCvs, annCvs, ovlCvs].forEach(c => { c.width = 1; c.height = 1; });
-    }
-  }
-
   return {
     gotoPage, fit, undo, clear, deleteSelected, closeFile, redraw, loadPDF,
     drawSubOverlays, redrawSelOv: drawSelOv,
-    saveState, loadState,
-    setPostLoad(fn) { _postLoadFn = fn; }, // シートマネージャーから呼ぶ
     get pdfDoc()      { return pdfDoc;      },
     get origBuf()     { return origBuf;     },
     get fileName()    { return fileName;    },
@@ -2253,6 +1572,12 @@ const App = (() => {
     get currentPage() { return curPage;     },
     get totalPages()  { return totalPages;  },
     get scale()       { return scale;       },
+    get renderScale() { return renderScale; },
+    get cssExtraZoom(){ return cssExtraZoom;},
+    get panX()        { return panX;        },
+    get panY()        { return panY;        },
+    get pc()          { return pdfCvs;      },
+    get dc()          { return annCvs;      },
     restore
   };
 })();
@@ -2261,168 +1586,10 @@ const App = (() => {
 (async () => {
   const saved = await IDB.get('last'); if (!saved?.buf) return;
   showLoading(true);
-  try {
-    await App.restore(saved);
-    if (typeof _sheetSync === 'function') _sheetSync(); // タブへ反映
-    showToast('前回の状態を復元しました');
-  }
+  try { await App.restore(saved); showToast('前回の状態を復元しました'); }
   catch(e) { console.error('Restore:', e); }
   showLoading(false);
 })();
-
-/* ============================================================
-   シートマネージャー (タブ管理)
-   各シートは pdfDoc・strokes・ズーム・ページ・サブ窓状態を独立保持。
-   タブ切替時のみ App 状態を保存/復元することで最小限の変更に抑える。
-   メモリ: 非アクティブ pdfDoc は参照保持のみ (pageCache は切替時クリア)
-   ============================================================ */
-const MAX_SHEETS = 8;   // タブ最大数
-let _sheets   = [];     // シート状態配列
-let _sheetIdx = 0;      // アクティブインデックス
-let _sheetSeq = 0;      // ID カウンタ
-
-/** 空シートオブジェクトを生成 */
-function _emptySheet() {
-  return { id: ++_sheetSeq, pdfDoc: null, origBuf: null, fileName: '(新規)',
-           curPage: 1, totalPages: 0, scale: 1, renderScale: 1, cssExtraZoom: 1,
-           panX: 16, panY: 16, strokes: {}, subWinStates: [], fh: null };
-}
-_sheets.push(_emptySheet()); // 初期シート
-
-/** サブ窓状態を保存して DOM を閉じる */
-function _freezeSubWins() {
-  const st = subWindows.map(sw => ({
-    pageNum: sw.pageNum, offX: sw.offX, offY: sw.offY,
-    innerScale: sw.innerScale,
-    winW: sw.el.clientWidth  || sw.winW,
-    winH: sw.el.clientHeight || sw.winH,
-    left: sw.el.style.left, top: sw.el.style.top,
-    rW: (sw.cvs.width  || 400) / sw.innerScale,
-    rH: (sw.cvs.height || 300) / sw.innerScale
-  }));
-  subWindows.slice().forEach(sw => sw.close());
-  return st;
-}
-
-/** 保存済みサブ窓状態から DOM を再構築 */
-function _thawSubWins(states, doc, strks) {
-  if (!states || !doc) return;
-  states.forEach(s => {
-    if (subWindows.length >= MAX_SUBWIN) return;
-    const region = { x1: s.offX, y1: s.offY,
-                     x2: s.offX + (s.rW || 200), y2: s.offY + (s.rH || 200) };
-    const sx = parseFloat(s.left) || 80, sy = parseFloat(s.top) || 80;
-    const sw = new SubWin(doc, strks, s.pageNum, region, sx, sy, s.innerScale);
-    if (s.winW && s.winH) {
-      sw.winW = s.winW; sw.winH = s.winH;
-      sw.el.style.width = s.winW + 'px'; sw.el.style.height = s.winH + 'px';
-    }
-    subWindows.push(sw);
-  });
-}
-
-/** 現在の App 状態を現在シートへ同期 (_postLoadFn 経由でも呼ばれる) */
-function _sheetSync() {
-  if (!_sheets[_sheetIdx]) return;
-  Object.assign(_sheets[_sheetIdx], App.saveState(), { fh: _fileHandle });
-  _renderTabBar();
-}
-
-/** タブバー DOM を再描画 */
-function _renderTabBar() {
-  const bar = document.getElementById('tabbar');
-  if (!bar) return;
-  bar.innerHTML = '';
-  _sheets.forEach((sh, i) => {
-    const div = document.createElement('div');
-    div.className = 'shtab' + (i === _sheetIdx ? ' active' : '');
-    const raw = sh.fileName === '(新規)' ? '(新規)' : sh.fileName.replace(/\.pdf$/i, '');
-    const label = raw.length > 16 ? raw.slice(0, 15) + '…' : raw;
-    div.innerHTML = `<span class="shtab-nm" title="${sh.fileName}">📄 ${label}</span>`
-                  + `<button class="shtab-x" title="閉じる">✕</button>`;
-    div.addEventListener('click', e => {
-      if (!e.target.classList.contains('shtab-x')) switchToSheet(i);
-    });
-    div.querySelector('.shtab-x').addEventListener('click', e => {
-      e.stopPropagation(); closeSheetAt(i);
-    });
-    bar.appendChild(div);
-  });
-  const add = document.createElement('button');
-  add.className = 'shtab-add'; add.title = 'PDFを追加 (新タブ)'; add.textContent = '＋';
-  add.addEventListener('click', () => addSheet());
-  bar.appendChild(add);
-}
-
-/** タブ切替 */
-async function switchToSheet(idx) {
-  if (idx === _sheetIdx || idx < 0 || idx >= _sheets.length) { _renderTabBar(); return; }
-  showLoading(true);
-  // 現在シートを保存
-  _sheets[_sheetIdx].subWinStates = _freezeSubWins();
-  Object.assign(_sheets[_sheetIdx], App.saveState(), { fh: _fileHandle });
-  // 新シートへ切替
-  _sheetIdx = idx;
-  const sh = _sheets[_sheetIdx];
-  _fileHandle = sh.fh || null;
-  await App.loadState(sh);
-  _thawSubWins(sh.subWinStates, sh.pdfDoc, App.strokes);
-  _renderTabBar();
-  showLoading(false);
-}
-
-/** 新タブを追加してファイル選択を促す */
-async function addSheet() {
-  if (_sheets.length >= MAX_SHEETS) { showToast(`タブは最大${MAX_SHEETS}つです`); return; }
-  // 現在シートを保存
-  _sheets[_sheetIdx].subWinStates = _freezeSubWins();
-  Object.assign(_sheets[_sheetIdx], App.saveState(), { fh: _fileHandle });
-  // 現サブ窓を再展開 (addSheet はタブ切替しないので現状維持)
-  _thawSubWins(_sheets[_sheetIdx].subWinStates, _sheets[_sheetIdx].pdfDoc, App.strokes);
-  // 新シート
-  const sh = _emptySheet();
-  _sheets.push(sh);
-  _sheetIdx = _sheets.length - 1;
-  _fileHandle = null;
-  await App.loadState(sh);
-  _renderTabBar();
-  openFile(); // ファイル選択 → loadPDF → _postLoadFn → _sheetSync で同期
-}
-
-/** タブを閉じる */
-async function closeSheetAt(idx) {
-  showLoading(true);
-  if (idx === _sheetIdx) _sheets[_sheetIdx].subWinStates = _freezeSubWins();
-  // pdfDoc 破棄 (メモリ解放)
-  if (_sheets[idx].pdfDoc) {
-    try { _sheets[idx].pdfDoc.destroy(); } catch(_) {}
-    _sheets[idx].pdfDoc = null;
-  }
-  if (_sheets.length === 1) {
-    // 最後の1枚は空にして維持
-    _sheets[0] = _emptySheet();
-    _sheetIdx  = 0; _fileHandle = null;
-    subWindows.slice().forEach(sw => sw.close());
-    await App.loadState(_sheets[0]);
-  } else {
-    _sheets.splice(idx, 1);
-    _sheetIdx = Math.min(idx, _sheets.length - 1);
-    const sh  = _sheets[_sheetIdx];
-    _fileHandle = sh.fh || null;
-    subWindows.slice().forEach(sw => sw.close());
-    await App.loadState(sh);
-    _thawSubWins(sh.subWinStates, sh.pdfDoc, App.strokes);
-  }
-  // PDF未選択状態になったら起動時復元キーをクリア（手動で閉じたデータを復元しない）
-  if (!App.pdfDoc) await IDB.set('last', null);
-  _renderTabBar();
-  showLoading(false);
-}
-
-// ファイル読み込み完了 → シートへ自動同期
-App.setPostLoad(() => _sheetSync());
-// 初期タブバー描画
-_renderTabBar();
 
 /* ============================================================
    ファイルを開く
@@ -2474,10 +1641,9 @@ function setTool(t) {
 }
 
 function setColor(el) {
-  strokeColor = el.dataset.c;
+  document.querySelectorAll('.csw').forEach(s => s.classList.remove('on'));
+  el.classList.add('on'); strokeColor = el.dataset.c;
   if (currentTool === 'hl') hlColor = strokeColor; else penColor = strokeColor;
-  // updateSwatches 経由で再描画 → インラインstyle.borderColor と .on クラスを正しく同期
-  updateSwatches(currentTool === 'hl' ? 'hl' : 'pen');
 }
 
 function pickShape(shapeName) {
@@ -2489,7 +1655,6 @@ function pickShape(shapeName) {
   document.querySelectorAll('#shapepop button').forEach(b => b.classList.remove('on'));
   document.querySelector(`#shapepop [data-shape="${shapeName}"]`)?.classList.add('on');
   closeAllPickers();
-  updateSwatches('pen'); // 図形は常にペン色を使用（蛍光ペン色の影響を排除）
   strokeSize = toolSizes[shapeName] || 2;
   document.getElementById('sz-v').textContent = strokeSize;
 }
@@ -2592,8 +1757,7 @@ async function _pdfOverlayPage(srcDoc, page, pageNum, strks, pw, ph) {
   const embed  = rotateCanvas(cvs, jsPage, pw, ph, SAVE_RS);
   const blob   = await new Promise(r => embed.toBlob(r, 'image/png'));
   const img    = await srcDoc.embedPng(new Uint8Array(await blob.arrayBuffer()));
-  // pdf-lib はページ左下を(0,0)とする座標系。画像はページ全体を覆うよう配置
-  page.drawImage(img, { x: 0, y: 0, width: pw, height: ph, opacity: 1 });
+  page.drawImage(img, { x: 0, y: 0, width: pw, height: ph });
 }
 
 async function _pdfRasterPage(srcDoc, page, pageNum, strks, pw, ph) {
@@ -2606,15 +1770,14 @@ async function _pdfRasterPage(srcDoc, page, pageNum, strks, pw, ph) {
   await jsPage.render({ canvasContext: ctx, viewport: vp }).promise;
   const ann    = document.createElement('canvas');
   ann.width = vp.width; ann.height = vp.height;
-  _drawAnnotations(ann.getContext('2d'), strks, SAVE_RS); // ② 消しゴムは text 以外すべて対象
+  strks.forEach(s => drawStroke(s, ann.getContext('2d'), SAVE_RS, SAVE_RS));
   ctx.drawImage(ann, 0, 0);
   const embed  = rotateCanvas(c, jsPage, pw, ph, SAVE_RS);
   const blob   = await new Promise(r => embed.toBlob(r, 'image/jpeg', 0.94));
   const img    = await srcDoc.embedJpg(new Uint8Array(await blob.arrayBuffer()));
-  // 白背景で既存コンテンツを塗りつぶし、ラスタ画像（PDF+注釈）で全面置換
   page.drawRectangle({ x:0, y:0, width:pw, height:ph,
     color: window.PDFLib.rgb(1,1,1), borderWidth: 0 });
-  page.drawImage(img, { x: 0, y: 0, width: pw, height: ph, opacity: 1 });
+  page.drawImage(img, { x: 0, y: 0, width: pw, height: ph });
 }
 
 async function generatePDFBlob() {
@@ -2659,81 +1822,17 @@ async function _generatePDFBlobFallback() {
   return doc.output('blob');
 }
 
-/** ③ PDF出力ボタン → ページ指定ダイアログを表示 */
-function savePDF() {
+async function savePDF() {
   if (!App.pdfDoc) { showToast('PDFが開かれていません'); return; }
-  document.getElementById('pgrov').classList.add('on');
-  document.getElementById('pgrfld').value       = '';
-  document.getElementById('pgrfld').placeholder = `全ページ / 例: 1, 1-${App.totalPages}, 1,3`;
-}
-
-/** ③ ページ範囲文字列をページ番号配列に変換
- *  対応形式: "" / "全ページ" / "1" / "1-5" / "1,3,5" / "1-3,8,10-12"
- */
-function _parsePageRange(input, total) {
-  const s = (input || '').trim();
-  if (!s || s === '全ページ') return Array.from({ length: total }, (_, i) => i + 1);
-  const pages = new Set();
-  s.split(',').forEach(part => {
-    const t = part.trim();
-    if (/^\d+$/.test(t)) {
-      pages.add(parseInt(t));
-    } else if (/^(\d+)-(\d+)$/.test(t)) {
-      const [, a, b] = t.match(/^(\d+)-(\d+)$/);
-      for (let i = parseInt(a); i <= parseInt(b); i++) pages.add(i);
-    }
-  });
-  return [...pages].filter(p => p >= 1 && p <= total).sort((a, b) => a - b);
-}
-
-/** ③ 指定ページのみ出力する PDF を生成 */
-async function _generateSubsetPDF(pageNums) {
-  const PL = window.PDFLib;
-  if (!PL) { showToast('⚠ pdf-lib 未ロード'); return null; }
-  const srcDoc = await PL.PDFDocument.load(App.origBuf.slice(0));
-  for (const pn of pageNums) {
-    const ss = App.strokes[pn] || [];
-    if (!ss.length) continue;
-    const page = srcDoc.getPage(pn - 1);
-    const { width, height } = page.getSize();
-    await (ss.some(s => s.type === 'eraser')
-      ? _pdfRasterPage(srcDoc, page, pn, ss, width, height)
-      : _pdfOverlayPage(srcDoc, page, pn, ss, width, height));
-  }
-  const newDoc = await PL.PDFDocument.create();
-  const indices = pageNums.map(n => n - 1);
-  const copied  = await newDoc.copyPages(srcDoc, indices);
-  copied.forEach((p, i) => {
-    newDoc.addPage(p);
-    // copyPages が Rotate メタデータを保持しない場合に備えて明示的に再設定
-    try {
-      const srcPage = srcDoc.getPage(indices[i]);
-      const rotAngle = srcPage.getRotation()?.angle ?? 0;
-      if (rotAngle) p.setRotation(PL.degrees(rotAngle));
-    } catch(_) {}
-  });
-  return new Blob([await newDoc.save()], { type: 'application/pdf' });
-}
-
-/** ③ 実際のPDF出力処理（ダイアログ確定後に呼ぶ） */
-async function _executeSave(rangeStr) {
-  document.getElementById('pgrov').classList.remove('on');
-  if (!App.pdfDoc) return;
   showLoading(true);
   try {
-    const pages = _parsePageRange(rangeStr, App.totalPages);
-    if (!pages.length) { showToast('有効なページがありません'); showLoading(false); return; }
-    const isAll = pages.length === App.totalPages;
-    // 全ページ・部分ページとも _generateSubsetPDF で統一（コードパスを単一化して安定化）
-    const blob  = await _generateSubsetPDF(pages);
-    if (!blob) { showLoading(false); return; }
-    const suffix = isAll ? '' : '_p' + rangeStr.replace(/\s/g, '');
-    const fname  = (App.fileName || 'drawing.pdf').replace(/\.pdf$/i, '') + suffix + '.pdf';
-    if (_fileHandle && isAll) {
+    const blob  = await generatePDFBlob();
+    const fname = App.fileName || 'drawing.pdf';
+    if (_fileHandle) {
       try {
         const w = await _fileHandle.createWritable();
         await w.write(blob); await w.close();
-        showToast('📤 PDF出力しました'); showLoading(false); return;
+        showToast('💾 上書き保存しました'); showLoading(false); return;
       } catch(e) { console.warn('write:', e); }
     }
     if (window.showSaveFilePicker) {
@@ -2742,18 +1841,84 @@ async function _executeSave(rangeStr) {
           suggestedName: fname,
           types: [{ description:'PDF', accept:{'application/pdf':['.pdf']} }]
         });
-        if (isAll) _fileHandle = fh;
+        _fileHandle = fh;
         const w = await fh.createWritable(); await w.write(blob); await w.close();
-        showToast('📤 PDF出力しました'); showLoading(false); return;
+        showToast('💾 保存しました'); showLoading(false); return;
       } catch(e) { if (e.name === 'AbortError') { showLoading(false); return; } }
     }
     const url = URL.createObjectURL(blob);
     const a   = document.createElement('a');
     a.download = fname; a.href = url; a.click();
     setTimeout(() => URL.revokeObjectURL(url), 60000);
-    showToast('📤 PDF出力: ' + fname);
-  } catch(e) { showToast('出力失敗: ' + e.message); console.error(e); }
+    showToast('💾 ダウンロード: ' + fname);
+  } catch(e) { showToast('保存失敗: ' + e.message); console.error(e); }
   showLoading(false);
+}
+
+function printPage() {
+  if (!App.pdfDoc) { showToast('PDFが開かれていません'); return; }
+  window.print();
+}
+
+/* ============================================================
+   スクリーンショット
+   ============================================================ */
+async function screenshot() {
+  if (!App.pdfDoc) { showToast('PDFが開かれていません'); return; }
+  try {
+    const caEl   = document.getElementById('ca');
+    const caRect = caEl.getBoundingClientRect();
+    const m      = document.createElement('canvas');
+    m.width  = Math.round(caRect.width);
+    m.height = Math.round(caRect.height);
+    const ctx = m.getContext('2d');
+    ctx.fillStyle = '#444'; ctx.fillRect(0, 0, m.width, m.height);
+
+    const pc     = App.pc, dc = App.dc;
+    const panX   = App.panX, panY = App.panY, ez = App.cssExtraZoom;
+    const pcCssW = parseFloat(pc.style.width)  || pc.width;
+    const pcCssH = parseFloat(pc.style.height) || pc.height;
+    const pdfDpr = pc.width / pcCssW;
+    const vW = pcCssW * ez, vH = pcCssH * ez;
+    const dstX   = Math.max(0, panX), dstY = Math.max(0, panY);
+    const srcXcss = Math.max(0, -panX) / ez;
+    const srcYcss = Math.max(0, -panY) / ez;
+    const visW   = Math.min(m.width  - dstX, vW - Math.max(0, -panX));
+    const visH   = Math.min(m.height - dstY, vH - Math.max(0, -panY));
+    if (visW > 0 && visH > 0) {
+      const sW = visW / ez, sH = visH / ez;
+      ctx.drawImage(pc, srcXcss*pdfDpr, srcYcss*pdfDpr, sW*pdfDpr, sH*pdfDpr, dstX, dstY, visW, visH);
+      ctx.drawImage(dc, srcXcss,        srcYcss,        sW,        sH,        dstX, dstY, visW, visH);
+    }
+    subWindows.forEach(sw => {
+      const swRect = sw.el.getBoundingClientRect();
+      const bRect  = sw.body.getBoundingClientRect();
+      const bx = bRect.left - caRect.left, by = bRect.top - caRect.top;
+      const bw = bRect.width, bh = bRect.height;
+      if (bx < m.width && by < m.height && bx+bw > 0 && by+bh > 0) {
+        ctx.save();
+        ctx.rect(Math.max(0,bx), Math.max(0,by), Math.min(bw,m.width-bx), Math.min(bh,m.height-by));
+        ctx.clip();
+        ctx.drawImage(sw.cvs, sw.offX*sw.innerScale, sw.offY*sw.innerScale, bw, bh, bx, by, bw, bh);
+        ctx.restore();
+        const sx = swRect.left - caRect.left, sy = swRect.top - caRect.top;
+        ctx.save(); ctx.strokeStyle = sw.swColor || '#f07800'; ctx.lineWidth = 2.5;
+        ctx.strokeRect(sx, sy, swRect.width, swRect.height); ctx.restore();
+      }
+    });
+    const blob = await new Promise(r => m.toBlob(r, 'image/png'));
+    if (!blob) { showToast('スクショ失敗'); return; }
+    const fname = 'M_Viewer_' + Date.now() + '.png';
+    const file  = new File([blob], fname, { type: 'image/png' });
+    if (navigator.share && navigator.canShare?.({ files: [file] })) {
+      try { await navigator.share({ title: 'M_Viewer ' + App.fileName, files: [file] }); return; }
+      catch(e) { if (e.name === 'AbortError') return; }
+    }
+    const url = URL.createObjectURL(blob);
+    const a   = document.createElement('a'); a.href = url; a.download = fname; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 30000);
+    showToast('📸 スクショ保存');
+  } catch(e) { if (e.name !== 'AbortError') { showToast('スクショ失敗'); console.error(e); } }
 }
 
 /* ============================================================
@@ -2762,143 +1927,61 @@ async function _executeSave(rangeStr) {
 let calcExpr = '', calcOper = '', calcVal = '', calcJustEq = false;
 const calcHistory = [];
 
-function calcDecPlaces() { return Math.max(0, parseInt(document.getElementById('cdec').value) || 0); }
-
-/* --- [FIX-CALC] 安全性・精度強化ユーティリティ --- */
-
-/** 全角数字・記号→半角変換 */
-function _calcNorm(s) {
-  return String(s)
-    .replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0))
-    .replace(/[．]/g, '.').trim();
+function calcDecPlaces() { return parseInt(document.getElementById('cdec').value) ?? 0; }
+function calcDisplay() {
+  document.getElementById('cexpr').textContent = calcExpr;
+  document.getElementById('cval').textContent  = calcVal || '0';
 }
 
-/** 安全な数値変換: 無効値・空文字は null を返す (|| 0 による誤魔化しを排除) */
-function _safeNum(s) {
-  const norm = _calcNorm(String(s));
-  if (norm === '') return null;          // [FIX-CALC] 空文字→null (Numberは0を返すため明示ガード)
-  const n = Number(norm);
-  return Number.isFinite(n) ? n : null;
-}
-
-/** 浮動小数点ノイズ除去 + 表示桁丸め (toPrecision(14) で mm単位精度を確保) */
-function _calcFmt(n, places) {
-  const cleaned = parseFloat(n.toPrecision(14));
-  return String(+cleaned.toFixed(places));
-}
-
-/** エラー状態か判定 */
-function _isErr(v) { return v === 'エラー' || v === '÷0エラー'; }
-
-/** 演算実行: ゼロ除算は null を返す (旧: 0 返却バグを修正) */
+/** 演算実行 */
 function _calcCompute(a, op, b) {
   if (op === '+') return a + b;
   if (op === '-') return a - b;
   if (op === '*') return a * b;
-  if (op === '/') return b === 0 ? null : a / b; // [FIX-CALC] ゼロ除算→null
+  if (op === '/') return b ? a / b : 0;
   return a;
 }
 
-/** 履歴DOM更新 */
-function _calcUpdateHist() {
-  document.getElementById('chist').innerHTML =
-    calcHistory.map(h => `<div class="chi">${h}</div>`).join('');
-}
-
-/** calcExpr の先頭数値部分を取得 (末尾の演算子記号を除去) */
-function _calcGetA() { return _safeNum(calcExpr.replace(/[÷×＋−]$/, '').trim()); }
-
-/** エラー設定 (メッセージ + 状態リセット) */
-function _calcSetError(msg) {
-  calcHistory.unshift(msg);
-  if (calcHistory.length > 20) calcHistory.pop();
-  _calcUpdateHist();
-  calcExpr = ''; calcVal = 'エラー'; calcOper = ''; calcJustEq = true;
-}
-
-/* --- 表示更新 --- */
-function calcDisplay() {
-  document.getElementById('cexpr').textContent = calcExpr;
-  const el = document.getElementById('cval');
-  el.textContent = calcVal || '0';
-  el.style.color = _isErr(calcVal) ? '#ff6060' : ''; // [FIX-CALC] エラー時に赤表示
-}
-
-/* --- 数値ボタン --- */
 function calcNum(n) {
-  if (_isErr(calcVal)) return;                         // [FIX-CALC] エラー中は入力ブロック
   if (calcJustEq) { calcVal = ''; calcExpr = ''; calcJustEq = false; }
-  n = _calcNorm(n);                                    // [FIX-CALC] 全角正規化
   if (n === '.' && calcVal.includes('.')) return;
-  if (n === '.' && calcVal === '') calcVal = '0';      // 先頭ドット補完
   calcVal += n; calcDisplay();
 }
-
-/* --- 演算子ボタン --- */
 function calcOp(op) {
-  if (_isErr(calcVal)) return;                         // [FIX-CALC] エラー中はブロック
   calcJustEq = false;
   if (calcVal !== '' && calcOper !== '') {
-    const a = _calcGetA(), b = _safeNum(calcVal);      // [FIX-CALC] 安全パース
-    if (a === null || b === null) { _calcSetError('入力エラー'); calcDisplay(); return; }
-    const r = _calcCompute(a, calcOper, b);
-    if (r === null) { _calcSetError(calcExpr + calcVal + ' = ÷0エラー'); calcDisplay(); return; }
-    calcVal = _calcFmt(r, calcDecPlaces());             // [FIX-CALC] 高精度フォーマット
+    const a = parseFloat(calcExpr.split(/[÷×＋−]/)[0]) || 0;
+    const b = parseFloat(calcVal) || 0;
+    calcVal = String(+_calcCompute(a, calcOper, b).toFixed(calcDecPlaces()));
   }
   const OP_SYMBOLS = { '+': '＋', '-': '−', '*': '×', '/': '÷' };
   calcExpr = (calcVal || '0') + OP_SYMBOLS[op];
   calcOper = op; calcVal = ''; calcDisplay();
 }
-
-/* --- イコール --- */
 function calcEq() {
-  if (!calcOper || calcVal === '' || _isErr(calcVal)) return;
-  const a = _calcGetA(), b = _safeNum(calcVal);        // [FIX-CALC] 安全パース
-  if (a === null || b === null) { _calcSetError('入力エラー'); calcDisplay(); return; }
-  const r = _calcCompute(a, calcOper, b);
-  if (r === null) {                                    // [FIX-CALC] ゼロ除算→エラー表示
-    _calcSetError(calcExpr + calcVal + ' = ÷0エラー');
-    calcDisplay(); return;
-  }
-  const rs = _calcFmt(r, calcDecPlaces());             // [FIX-CALC] 高精度フォーマット
+  if (!calcOper || calcVal === '') return;
+  const a  = parseFloat(calcExpr.split(/[÷×＋−]/)[0]) || 0;
+  const b  = parseFloat(calcVal) || 0;
+  const rs = String(+_calcCompute(a, calcOper, b).toFixed(calcDecPlaces()));
   calcHistory.unshift(calcExpr + calcVal + ' = ' + rs);
   if (calcHistory.length > 20) calcHistory.pop();
-  _calcUpdateHist();
+  document.getElementById('chist').innerHTML =
+    calcHistory.map(h => `<div class="chi">${h}</div>`).join('');
   calcExpr = calcExpr + calcVal + '='; calcVal = rs;
   calcOper = ''; calcJustEq = true; calcDisplay();
 }
-
-/* --- 特殊ボタン --- */
 function calcFn(f) {
-  if (f === 'C') {
-    calcExpr = ''; calcVal = ''; calcOper = ''; calcJustEq = false;
-  } else if (f === '±') {
-    if (!calcVal || _isErr(calcVal)) return;
-    const n = _safeNum(calcVal); if (n === null) return; // [FIX-CALC] 安全パース
-    calcVal = String(-n);
-  } else if (f === '%') {
-    if (!calcVal || _isErr(calcVal)) return;
-    const n = _safeNum(calcVal); if (n === null) return; // [FIX-CALC] 安全パース
-    calcVal = String(parseFloat((n / 100).toPrecision(14))); // [FIX-CALC] 精度保持
-  } else if (f === '⌫') {
-    if (_isErr(calcVal)) { calcVal = ''; }              // [FIX-CALC] エラー→クリア
-    else calcVal = calcVal.length > 1 ? calcVal.slice(0, -1) : '';
-  } else if (f === 'sqrt') {
-    if (!calcVal || _isErr(calcVal)) return;
-    const n = _safeNum(calcVal); if (n === null) return; // [FIX-CALC] 安全パース
-    calcVal = n < 0 ? 'エラー' : _calcFmt(Math.sqrt(n), calcDecPlaces());
-  } else if (f === 'sq') {
-    if (!calcVal || _isErr(calcVal)) return;
-    const n = _safeNum(calcVal); if (n === null) return; // [FIX-CALC] 安全パース
-    calcVal = _calcFmt(n * n, calcDecPlaces());
-  } else if (f === '=') {
-    calcEq(); return;
-  }
+  if      (f === 'C')    { calcExpr = ''; calcVal = ''; calcOper = ''; calcJustEq = false; }
+  else if (f === '±')   { if (calcVal) calcVal = String(-parseFloat(calcVal)); }
+  else if (f === '%')    { if (calcVal) calcVal = String(parseFloat(calcVal) / 100); }
+  else if (f === '⌫')   { calcVal = calcVal.length > 1 ? calcVal.slice(0, -1) : ''; }
+  else if (f === 'sqrt') { if (!calcVal) return; const v = parseFloat(calcVal); calcVal = v < 0 ? 'エラー' : String(+Math.sqrt(v).toFixed(calcDecPlaces())); }
+  else if (f === 'sq')   { if (!calcVal) return; calcVal = String(+(parseFloat(calcVal)**2).toFixed(calcDecPlaces())); }
+  else if (f === '=')    { calcEq(); return; }
   calcDisplay();
 }
-
 function toggleCalc() {
-  const el = document.getElementById('calc');
+  const el  = document.getElementById('calc');
   el.classList.toggle('on');
   document.getElementById('calcbtn').classList.toggle('on', el.classList.contains('on'));
 }
@@ -2953,11 +2036,10 @@ function showLoading(visible) {
   document.getElementById('dz-open')  .addEventListener('click', () => openFile());
   document.getElementById('btn-undo') .addEventListener('click', () => App.undo());
   document.getElementById('btn-save') .addEventListener('click', () => savePDF());
+  document.getElementById('btn-shot') .addEventListener('click', () => screenshot());
+  document.getElementById('btn-print').addEventListener('click', () => printPage());
   document.getElementById('calcbtn')  .addEventListener('click', () => toggleCalc());
-  document.getElementById('btn-close').addEventListener('click', () => {
-    if (!App.pdfDoc) return;
-    if (confirm('このタブを閉じますか？（保存済みデータは残ります）')) closeSheetAt(_sheetIdx);
-  });
+  document.getElementById('btn-close').addEventListener('click', () => App.closeFile());
   document.getElementById('cclose')   .addEventListener('click', () => toggleCalc());
 
   /* --- ヘッダー行2: ページナビ --- */
@@ -2970,7 +2052,6 @@ function showLoading(visible) {
   /* --- ツールボタン --- */
   ['pen','hl','text','eraser','sub'].forEach(id =>
     document.getElementById('t-' + id).addEventListener('click', () => setTool(id)));
-  document.getElementById('t-betsu').addEventListener('click', () => openBetsuWin());
 
   document.getElementById('t-shape').addEventListener('click', e =>
     togglePicker('shapepop', e.currentTarget));
@@ -2991,4 +2072,37 @@ function showLoading(visible) {
   document.getElementById('sz-rng').addEventListener('input',  e => onSzChange(e.target.value));
   document.getElementById('sz-n')  .addEventListener('change', e => onSzChange(e.target.value));
   document.getElementById('szp-ok')    .addEventListener('click', () => applySz());
- 
+  document.getElementById('szp-cancel').addEventListener('click', () =>
+    document.getElementById('szp').classList.remove('on'));
+
+  /* --- テキスト入力 --- */
+  document.getElementById('txConfirm').addEventListener('click', () => confirmTx());
+  document.getElementById('txCancel') .addEventListener('click', () => cancelTx());
+  document.getElementById('txfld').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && e.ctrlKey) confirmTx();
+    if (e.key === 'Escape') cancelTx();
+  });
+
+  /* --- 選択削除 --- */
+  document.getElementById('selbtn').addEventListener('click', () => App.deleteSelected());
+
+  /* --- 計算機ボタン (data属性でディスパッチ) --- */
+  document.getElementById('cbtns').addEventListener('click', e => {
+    const btn = e.target.closest('[data-cnum],[data-cop],[data-cfn]');
+    if (!btn) return;
+    if (btn.dataset.cnum !== undefined) calcNum(btn.dataset.cnum);
+    else if (btn.dataset.cop  !== undefined) calcOp(btn.dataset.cop);
+    else if (btn.dataset.cfn  !== undefined) calcFn(btn.dataset.cfn);
+  });
+
+  /* --- グローバルクリック: ピッカー & 太さパネルを閉じる --- */
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.pkw'))
+      closeAllPickers();
+    if (!e.target.closest('#szp') && !e.target.closest('.sz-val'))
+      document.getElementById('szp').classList.remove('on');
+  });
+})();
+</script>
+</body>
+</html>

@@ -160,9 +160,9 @@ function buildDim(p1,p2,pArrow,type){
 }
 
 function formatDim(d){
-  if(d>=100) return Math.round(d)+'';
-  if(d>=10) return d.toFixed(1);
-  return d.toFixed(2);
+  // 小数第1位まで四捨五入。.0の場合は小数点ごと省略
+  var v=Math.round(d*10)/10;
+  return (v%1===0)?String(Math.round(v)):v.toFixed(1);
 }
 
 // ── B. 拡張スナップ（円-直線交点・円-円交点） ──────────────────────────
@@ -792,7 +792,7 @@ function buildLinePtDim(line,pt,pArrow){
     lines.push({x1:d2.x,y1:d2.y,x2:tx2,y2:ty2});
   }
   return {lines,arrows,
-    text:(Math.round(dist/sd*10)/10).toFixed(1),
+    text:formatDim(dist/sd),
     tx:tx2,ty:ty2,tangle,color:'#f39c12'};
 }
 

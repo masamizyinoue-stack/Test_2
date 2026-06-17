@@ -48,7 +48,7 @@ function distToSeg(px,py,x1,y1,x2,y2){
 function snapAt(wx,wy){
   if(!doc) return null;
   const sr=24/scale;
-  const BN={int:sr*0.55,end:sr*0.35,cen:sr*0.20,mid:sr*0.05};
+  const BN={int:sr*0.55,end:sr*0.35,ten:sr*0.40,cen:sr*0.20,mid:sr*0.05};
   let best=null,bestScore=sr;
   function check(x,y,type){
     if(!isFinite(x)||!isFinite(y)) return;
@@ -82,6 +82,14 @@ function snapAt(wx,wy){
       const ix=lineIntersect(a.x1,a.y1,a.x2,a.y2,b.x1,b.y1,b.x2,b.y2);
       if(ix) check(ix.x,ix.y,'int');
       if(bestScore<-sr*0.2) break outer;
+    }
+  }
+  // 点要素(POINT/ten)スナップ
+  if(doc.ten){
+    for(var _ti=0;_ti<doc.ten.length;_ti++){
+      var _te=doc.ten[_ti];
+      if(hiddenLayers.has(_te.layer)) continue;
+      check(_te.x,_te.y,'ten');
     }
   }
   return best;
@@ -291,6 +299,7 @@ window.drawOverlay=function(){
 // snapPt のラベルマップ拡張（既存に追加）
 var SNAP_COLORS={
   'end':'#00ff7f','int':'#ffd700','cen':'#00f0ff','mid':'#ffbb33',
+  'ten':'#ff6b6b',
   'cxl':'#ff88cc','cxc':'#ffcc44','default':'#f39c12'
 };
 
@@ -367,7 +376,11 @@ function drawExtSnapMarker(ctx,sx,sy,type){
   ctx.save();
   ctx.strokeStyle=col; ctx.fillStyle=col; ctx.lineWidth=2;
   // cxl, cxc は既存と異なるマーカー形状
-  if(type==='cxl'){
+  if(type==='ten'){
+    // 点要素: 二重円（小さな塗り円 + 外枠円）
+    ctx.beginPath(); ctx.arc(sx,sy,8,0,Math.PI*2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(sx,sy,3,0,Math.PI*2); ctx.fill();
+  } else if(type==='cxl'){
     ctx.beginPath();
     ctx.moveTo(sx-8,sy-8); ctx.lineTo(sx+8,sy+8);
     ctx.moveTo(sx+8,sy-8); ctx.lineTo(sx-8,sy+8);
@@ -378,7 +391,7 @@ function drawExtSnapMarker(ctx,sx,sy,type){
     ctx.beginPath(); ctx.arc(sx,sy,3,0,Math.PI*2); ctx.fill();
   }
   // ラベル
-  var lbl={cxl:'円-線交点',cxc:'円-円交点'}[type]||'';
+  var lbl={ten:'点要素',cxl:'円-線交点',cxc:'円-円交点'}[type]||'';
   if(lbl){
     ctx.font='bold 11px sans-serif';
     var tw=ctx.measureText(lbl).width;
@@ -679,7 +692,7 @@ function findNearestSen(wx,wy){
 // ─ LP専用スナップマーカー（全snap type対応） ─────────────
 function drawLPSnapMarker(ctx2,sx,sy,type){
   var cols={end:'#00ff7f',mid:'#ffbb33',cen:'#00f0ff',int:'#ffd700',
-            cxl:'#ff88cc',cxc:'#ffcc44','default':'#f39c12'};
+            ten:'#ff6b6b',cxl:'#ff88cc',cxc:'#ffcc44','default':'#f39c12'};
   var col=cols[type]||cols['default'];
   var r=9;
   ctx2.save();
@@ -706,6 +719,10 @@ function drawLPSnapMarker(ctx2,sx,sy,type){
     ctx2.moveTo(sx-r,sy-r); ctx2.lineTo(sx+r,sy+r);
     ctx2.moveTo(sx+r,sy-r); ctx2.lineTo(sx-r,sy+r);
     ctx2.stroke();
+  } else if(type==='ten'){
+    // 点要素: 二重円
+    ctx2.beginPath(); ctx2.arc(sx,sy,8,0,Math.PI*2); ctx2.stroke();
+    ctx2.beginPath(); ctx2.arc(sx,sy,3,0,Math.PI*2); ctx2.fill();
   } else if(type==='cxl'){
     // 円-線交点
     ctx2.beginPath();
@@ -725,7 +742,7 @@ function drawLPSnapMarker(ctx2,sx,sy,type){
     ctx2.stroke();
   }
   // snap type ラベル
-  var lbl={end:'端点',mid:'中点',cen:'中心',int:'交点',
+  var lbl={end:'端点',mid:'中点',cen:'中心',int:'交点',ten:'点要素',
            cxl:'円-線交点',cxc:'円-円交点'}[type]||'';
   if(lbl){
     ctx2.font='bold 11px sans-serif';

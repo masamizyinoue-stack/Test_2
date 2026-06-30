@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
-<title>M_Viewer V3.04</title>
+<title>M_Viewer V3.05</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -5150,20 +5150,19 @@ const TextSearch = (() => {
   'use strict';
 
   /* ── 定数 ── */
-  const HL_COLOR_NORMAL  = 'rgba(210,0,0,0.90)';    /* 赤枠: 通常一致 */
-  const HL_COLOR_CURRENT_IN  = 'rgba(210,0,0,1.0)';  /* 現在位置: 内枠(赤) */
-  const HL_COLOR_CURRENT_OUT = 'rgba(255,110,0,1.0)';/* 現在位置: 外枠(オレンジ) */
+  const HL_COLOR_NORMAL      = 'rgba(210,0,0,0.90)';    /* 赤枠: 通常一致 */
+  const HL_COLOR_CURRENT_IN  = 'rgba(210,0,0,1.0)';    /* 現在位置: 内枠(赤) */
+  const HL_COLOR_CURRENT_OUT = 'rgba(255,110,0,1.0)';  /* 現在位置: 外枠(オレンジ) */
   const DEBOUNCE_MS = 200;
 
   /* ── 状態 ── */
   let _isOpen   = false;
-  let _query    = '';          /* 正規化済みクエリ */
-  let _rawQuery = '';          /* 入力生文字 */
-  let _matches  = [];          /* 全マッチ: [{page,source,x,y,w,h,context},...] */
+  let _query    = '';
+  let _rawQuery = '';
+  let _matches  = [];
   let _curIdx   = -1;
 
   /* ── インデックス ── */
-  /* _idx[page] = { pdf:[{text,x,y,w,h},...], annotation:[...] } */
   let _idx     = {};
   let _idxDoc  = null;
   let _idxBusy = false;
@@ -5177,53 +5176,46 @@ const TextSearch = (() => {
 
   /* ════════════════════════════════════════════════════════
      正規化
-     ・全角英数記号 → 半角ASCII (U+FF01-U+FF5E → U+0021-U+007E)
-     ・全角スペース → 半角スペース
-     ・英字小文字化
-     ・ハイフン類 (‐–—―ー－＊*) → '-'
-     ・乗算記号 × (U+00D7) → 'x'
-     ・連続スペース → 1つ、前後トリム
      ════════════════════════════════════════════════════════ */
   function _normalize(s) {
     if (!s) return '';
-    /* 全角英数記号 → 半角 (！～ → !~) */
     s = s.replace(/[！-～]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0));
-    /* 全角スペース → 半角 */
     s = s.replace(/　/g, ' ');
-    /* 英字小文字化 */
     s = s.replace(/[A-Za-z]/g, c => c.toLowerCase());
-    /* ハイフン類を '-' に統一
-       U+2010 ‐  U+2011 ‑  U+2012 ‒  U+2013 –  U+2014 —
-       U+2015 ―  U+30FC ー U+FF0D －  U+FF0A ＊  U+002A * */
     s = s.replace(/[‐‑‒–—―ー－＊*]/g, '-');
-    /* 乗算記号 × → x */
     s = s.replace(/×/g, 'x');
-    /* 連続スペース → 1つ、前後トリム */
     s = s.replace(/\s+/g, ' ').trim();
     return s;
   }
 
-  /* haystack 内で needle の全出現開始位置を返す (正規化比較) */
+  /* ════════════════════════════════════════════════════════
+     [修正①] _findAll: pos += n.length で重複しないように前進
+     旧: pos++ → 重複マッチ(overlapping)が発生していた
+     ════════════════════════════════════════════════════════ */
   function _findAll(haystack, needle) {
     const h = _normalize(haystack);
     const n = _normalize(needle);
     const result = [];
     if (!n) return result;
     let pos = 0;
-    while ((pos = h.indexOf(n, pos)) !== -1) { result.push(pos); pos++; }
+    while ((pos = h.indexOf(n, pos)) !== -1) {
+      result.push(pos);
+      pos += n.length;   /* ← 修正: pos++ → pos += n.length (重複ヒット防止) */
+    }
     return result;
   }
 
   /* ════════════════════════════════════════════════════════
-     インデックス構築: 同一行のTextItemを連結
+     [修正②] _buildPdfPage: X重複排除 + parts文字位置マップ
      ────────────────────────────────────────────────────────
-     PDF.jsはひとつの単語を複数TextItemに分割することがある
-     例: ["BH", "-", "500"] → "BH-500" として索引化
-     アルゴリズム:
-       1. Y座標が近い(許容差 h*0.45)アイテムを同一行とみなす
-       2. 行内をX順ソート
-       3. 隣接アイテムのX方向ギャップ ≤ h*1.5 なら連結
-          ギャップがスペース幅(h*0.25)より大きい場合は空白を挿入
+     問題1: PDFが同一位置に複数TextItem(影・輪郭等)を持つ場合、
+            連結すると "BH-500BH-500BH-500" になり3件ヒットしていた
+     修正1: X座標が1pt以内の重複アイテムを除去
+
+     問題2: 連結セグメント途中のマッチを文字数比率で推測していた
+            → 比例フォント等で位置がズレていた
+     修正2: partsマップ({cs,ce,x,w})を各アイテムごとに記録し
+            _buildMatchesで正確なx/w計算に利用する
      ════════════════════════════════════════════════════════ */
   async function _buildPdfPage(pageNum) {
     if (!App.pdfDoc) return;
@@ -5235,7 +5227,6 @@ const TextSearch = (() => {
       const rawItems = tc.items.filter(it => it.str && it.str.trim());
       if (!rawItems.length) { _idx[pageNum].pdf = []; return; }
 
-      /* アイテム情報を整理 */
       const items = rawItems.map(it => ({
         str: it.str,
         x:   it.transform[4],
@@ -5244,7 +5235,7 @@ const TextSearch = (() => {
         h:   Math.abs(it.transform[3]) || Math.abs(it.height) || 12,
       }));
 
-      /* Y座標でグループ化 (同一行検出) */
+      /* Y座標でグループ化 */
       const lines = [];
       for (const it of items) {
         const tol = it.h * 0.45;
@@ -5253,31 +5244,56 @@ const TextSearch = (() => {
         grp.items.push(it);
       }
 
-      /* 各行をX順ソートして隣接アイテムを連結 */
       const merged = [];
       for (const grp of lines) {
+        /* X順ソート */
         grp.items.sort((a, b) => a.x - b.x);
-        let cur = null;
+
+        /* [修正②-1] X座標が1pt以内の重複アイテムを除去
+           (PDF影テキスト・輪郭テキスト等の描画アーティファクト対策) */
+        const deduped = [];
         for (const it of grp.items) {
+          const prev = deduped[deduped.length - 1];
+          if (prev && Math.abs(it.x - prev.x) <= 1.0) continue; /* 重複スキップ */
+          deduped.push(it);
+        }
+
+        /* [修正②-2] 連結しながら parts マップを構築
+           parts[i] = { cs: 開始文字位置, ce: 終了文字位置, x: アイテムX, w: アイテムW }
+           これにより _buildMatches でマッチ位置から正確なx/wを引ける */
+        let cur = null;
+        let charOff = 0;
+        for (const it of deduped) {
+          const iw = Math.max(it.w, 1);
           if (!cur) {
-            cur = { text: it.str, x: it.x, y: it.y, w: Math.max(it.w, 1), h: it.h };
+            cur = {
+              text: it.str, x: it.x, y: it.y, w: iw, h: it.h,
+              parts: [{ cs: 0, ce: it.str.length, x: it.x, w: iw }],
+            };
+            charOff = it.str.length;
             continue;
           }
           const gap    = it.x - (cur.x + cur.w);
           const maxGap = cur.h * 1.5;
           if (gap <= maxGap) {
-            /* スペース幅より大きいギャップ → スペースを挿入 */
             const spaceW = cur.h * 0.25;
             if (gap > spaceW && !cur.text.endsWith(' ') && !it.str.startsWith(' ')) {
               cur.text += ' ';
+              charOff++;
             }
             cur.text += it.str;
-            const newRight = Math.max(cur.x + cur.w, it.x + Math.max(it.w, 1));
+            const newRight = Math.max(cur.x + cur.w, it.x + iw);
             cur.w = newRight - cur.x;
             if (it.h > cur.h) cur.h = it.h;
+            cur.parts.push({ cs: charOff, ce: charOff + it.str.length, x: it.x, w: iw });
+            charOff += it.str.length;
           } else {
             if (cur.text.trim()) merged.push(cur);
-            cur = { text: it.str, x: it.x, y: it.y, w: Math.max(it.w, 1), h: it.h };
+            cur = {
+              text: it.str, x: it.x, y: it.y, w: iw, h: it.h,
+              parts: [{ cs: 0, ce: it.str.length, x: it.x, w: iw }],
+            };
+            charOff = it.str.length;
           }
         }
         if (cur && cur.text.trim()) merged.push(cur);
@@ -5295,9 +5311,13 @@ const TextSearch = (() => {
       .map(s => ({ text: s.text, x: s.x || 0, y: s.y || 0, w: s.w || 60, h: s.h || 14 }));
   }
 
+  /* ════════════════════════════════════════════════════════
+     [修正③] _buildAllIndex: _idxBusyガードを追加
+     旧: ガードなし → dzObserver + open() で二重起動していた
+     ════════════════════════════════════════════════════════ */
   async function _buildAllIndex() {
     if (!App.pdfDoc) return;
-    /* キャッシュ有効チェック */
+    if (_idxBusy) return;  /* ← 修正: 二重起動防止 */
     if (_idxDoc === App.pdfDoc && Object.keys(_idx).length >= App.totalPages) return;
     _idxDoc = App.pdfDoc;
     _idx = {};
@@ -5306,7 +5326,7 @@ const TextSearch = (() => {
     for (let pg = 1; pg <= total; pg++) {
       await _buildPdfPage(pg);
       _buildAnnotationPage(pg);
-      if (pg % 3 === 0) await new Promise(r => setTimeout(r, 0)); /* yield */
+      if (pg % 3 === 0) await new Promise(r => setTimeout(r, 0));
       if (_query) {
         _buildMatches();
         _updateCount();
@@ -5323,14 +5343,19 @@ const TextSearch = (() => {
   }
 
   /* ════════════════════════════════════════════════════════
-     マッチ構築
-     ヒットごとに個別レコードを生成。
-     ハイライトX位置は正規化後文字数比率で近似。
+     [修正④] _buildMatches: parts使用の正確なx/w + 後処理重複排除
+     ────────────────────────────────────────────────────────
+     旧: 文字数比率でx/wを推測 → 比例フォントで位置ズレ
+     新: partsマップからマッチ開始/終了アイテムを特定し正確なx/wを取得
+         後処理で同一座標(2pt以内)の重複マッチを除去
      ════════════════════════════════════════════════════════ */
   function _buildMatches() {
     _matches = [];
     if (!_query || !App.pdfDoc) return;
+    const normQ   = _normalize(_query);
+    const normQLen = normQ.length || 1;
     const SOURCES = ['pdf', 'annotation'];
+
     for (let pg = 1; pg <= App.totalPages; pg++) {
       const pi = _idx[pg];
       if (!pi) continue;
@@ -5338,14 +5363,30 @@ const TextSearch = (() => {
         for (const item of (pi[src] || [])) {
           const hits = _findAll(item.text, _query);
           if (!hits.length) continue;
-          const normLen = _normalize(item.text).length || 1;
-          const normQ   = _normalize(_query).length   || 1;
+
           for (const hitPos of hits) {
-            /* ヒット部分のX/W近似 (文字数比率) */
-            const startR = hitPos  / normLen;
-            const endR   = Math.min((hitPos + normQ) / normLen, 1);
-            const hx     = item.x + item.w * startR;
-            const hw     = Math.max(item.w * (endR - startR), 4);
+            const hitEnd = hitPos + normQLen;
+            let hx, hw;
+
+            if (item.parts && item.parts.length > 0) {
+              /* partsマップからマッチ範囲をカバーするアイテムを特定 */
+              /* 開始アイテム: cs <= hitPos < ce */
+              let startPart = item.parts.find(p => p.cs <= hitPos && p.ce > hitPos);
+              /* 終了アイテム: cs < hitEnd <= ce */
+              let endPart   = item.parts.slice().reverse()
+                                .find(p => p.cs < hitEnd && p.ce >= hitEnd);
+              /* フォールバック */
+              if (!startPart) startPart = item.parts.find(p => p.cs >= hitPos) || item.parts[0];
+              if (!endPart)   endPart   = item.parts.find(p => p.ce >= hitEnd) || item.parts[item.parts.length - 1];
+              hx = startPart.x;
+              hw = Math.max((endPart.x + endPart.w) - startPart.x, 4);
+            } else {
+              /* フォールバック: 比率推測 */
+              const normLen = _normalize(item.text).length || 1;
+              hx = item.x + item.w * hitPos / normLen;
+              hw = Math.max(item.w * normQLen / normLen, 4);
+            }
+
             _matches.push({
               page: pg, source: src,
               x: hx, y: item.y,
@@ -5356,12 +5397,24 @@ const TextSearch = (() => {
         }
       }
     }
-    /* ソート: ページ昇順 → Y降順(PDF座標、上→下) → X昇順 */
+
+    /* ソート: ページ昇順 → Y降順(PDF座標) → X昇順 */
     _matches.sort((a, b) => {
       if (a.page !== b.page) return a.page - b.page;
       if (Math.abs(b.y - a.y) > 1) return b.y - a.y;
       return a.x - b.x;
     });
+
+    /* 後処理重複排除: 同一ページで座標が2pt以内のマッチは1件に絞る
+       (PDF描画アーティファクトや重複インデックスの安全網) */
+    const deduped = [];
+    for (const m of _matches) {
+      const last = deduped[deduped.length - 1];
+      if (last && last.page === m.page &&
+          Math.abs(last.x - m.x) < 2 && Math.abs(last.y - m.y) < 2) continue;
+      deduped.push(m);
+    }
+    _matches = deduped;
   }
 
   function _clampIdx(idx) {
@@ -5370,9 +5423,7 @@ const TextSearch = (() => {
   }
 
   /* ════════════════════════════════════════════════════════
-     ハイライト描画 — Acrobat風
-     文字のascent/descentを考慮した半透明背景で塗る。
-     吹き出し・付箋・アイコン等は一切描画しない。
+     ハイライト描画 (変更なし: 座標計算は正しいため維持)
      ════════════════════════════════════════════════════════ */
   function _syncHlCanvas() {
     const annCvs = document.getElementById('annCvs');
@@ -5390,7 +5441,6 @@ const TextSearch = (() => {
     if (!_query || !_matches.length || !App.pdfDoc) return;
 
     const curPage = App.currentPage;
-    /* 現在ページのマッチのみ抽出 */
     const pageMtch = [];
     _matches.forEach((m, gi) => { if (m.page === curPage) pageMtch.push({ m, gi }); });
     if (!pageMtch.length) return;
@@ -5405,34 +5455,28 @@ const TextSearch = (() => {
     } catch (_) { return; }
 
     _hlCtx.save();
+    const PAD = 2; /* 文字への余白 (canvas px) */
     for (const { m, gi } of pageMtch) {
       const isCur = gi === _curIdx;
-
-      /* PDF座標 → canvas座標
-         ascent  ≈ h * 0.85 (ベースライン上)
-         descent ≈ h * 0.20 (ベースライン下) で文字全体をカバー */
-      const tl = Utils.pdfToCanvas(m.x,       m.y + m.h * 0.85,  vp.transform);
-      const br = Utils.pdfToCanvas(m.x + m.w, m.y - m.h * 0.20,  vp.transform);
-
-      const rx = Math.min(tl.x, br.x);
-      const ry = Math.min(tl.y, br.y);
-      const rw = Math.abs(br.x - tl.x);
-      const rh = Math.abs(br.y - tl.y);
-
+      /* ascent≈h*0.85, descent≈h*0.20 で文字全体をカバー */
+      const tl = Utils.pdfToCanvas(m.x,       m.y + m.h * 0.85, vp.transform);
+      const br = Utils.pdfToCanvas(m.x + m.w, m.y - m.h * 0.20, vp.transform);
+      const rx = Math.min(tl.x, br.x) - PAD;
+      const ry = Math.min(tl.y, br.y) - PAD;
+      const rw = Math.abs(br.x - tl.x) + PAD * 2;
+      const rh = Math.abs(br.y - tl.y) + PAD * 2;
       if (rw < 1 || rh < 1) continue;
 
       _hlCtx.lineJoin = 'miter';
       if (isCur) {
-        /* 現在位置: オレンジ外枠 (3px) + 赤内枠 (2px) で二重枠 */
         _hlCtx.strokeStyle = HL_COLOR_CURRENT_OUT;
         _hlCtx.lineWidth   = 3.5;
         _hlCtx.strokeRect(Math.round(rx) - 1, Math.round(ry) - 1,
-                          Math.ceil(rw)  + 2, Math.ceil(rh)  + 2);
+                          Math.ceil(rw) + 2, Math.ceil(rh) + 2);
         _hlCtx.strokeStyle = HL_COLOR_CURRENT_IN;
         _hlCtx.lineWidth   = 2;
         _hlCtx.strokeRect(Math.round(rx), Math.round(ry), Math.ceil(rw), Math.ceil(rh));
       } else {
-        /* 通常一致: 赤枠 2px (塗りなし) */
         _hlCtx.strokeStyle = HL_COLOR_NORMAL;
         _hlCtx.lineWidth   = 2;
         _hlCtx.strokeRect(Math.round(rx), Math.round(ry), Math.ceil(rw), Math.ceil(rh));
@@ -5442,7 +5486,7 @@ const TextSearch = (() => {
   }
 
   /* ════════════════════════════════════════════════════════
-     UI更新
+     UI更新 (変更なし)
      ════════════════════════════════════════════════════════ */
   function _updateCount() {
     if (!_countEl) return;
@@ -5465,19 +5509,15 @@ const TextSearch = (() => {
       const btn = document.createElement('button');
       btn.className = 'srch-li-item' + (gi === _curIdx ? ' cur' : '');
       btn.dataset.gi = gi;
-
       const pgLbl = document.createElement('span');
       pgLbl.className = 'srch-li-pg';
       pgLbl.textContent = m.page + 'p';
-
       const txt = document.createElement('span');
       txt.className = 'srch-li-txt';
       txt.textContent = m.context || '';
-
       const src = document.createElement('span');
       src.className = 'srch-li-src';
       src.textContent = m.source === 'pdf' ? 'PDF' : '書込';
-
       btn.append(pgLbl, txt, src);
       btn.addEventListener('click', () => { _jumpTo(gi); }, { passive: true });
       _listPopEl.appendChild(btn);
@@ -5485,17 +5525,13 @@ const TextSearch = (() => {
   }
 
   /* ════════════════════════════════════════════════════════
-     ナビゲーション
-     App.restoreView(page, panX, panY, scale) が
-     ページ遷移・パン設定・描画を一括処理するため
-     gotoPage の別途呼び出しは不要。
+     ナビゲーション (変更なし)
      ════════════════════════════════════════════════════════ */
   async function _jumpTo(idx) {
     if (!_matches.length || idx < 0 || idx >= _matches.length) return;
     _curIdx = idx;
     _updateCount();
     if (_listPopEl && _listPopEl.classList.contains('on')) _updateListPop();
-    /* スクロール (ページ遷移含む) → ハイライト再描画 */
     await _scrollToMatch(_matches[idx]);
   }
 
@@ -5503,28 +5539,19 @@ const TextSearch = (() => {
     try {
       const ca = document.getElementById('ca');
       if (!ca || !App.pdfDoc) return;
-
       const page   = await App.pdfDoc.getPage(m.page);
       const vp1    = page.getViewport({ scale: 1 });
       const maxDim = Math.max(vp1.width, vp1.height);
       const rs     = Math.min(App.scale, MAX_CANVAS / maxDim);
       const cssEZ  = App.scale / rs;
       const vp     = page.getViewport({ scale: rs });
-
-      /* マッチ中心のcanvas座標 */
       const tl  = Utils.pdfToCanvas(m.x,       m.y + m.h * 0.5, vp.transform);
       const br  = Utils.pdfToCanvas(m.x + m.w, m.y - m.h * 0.2, vp.transform);
       const mcx = (tl.x + br.x) / 2;
       const mcy = (tl.y + br.y) / 2;
-
-      /* 画面中央へ */
       const sCX  = ca.clientWidth  / 2;
       const sCY  = ca.clientHeight / 2;
-      const newPX = sCX - mcx * cssEZ;
-      const newPY = sCY - mcy * cssEZ;
-
-      await App.restoreView(m.page, newPX, newPY, App.scale);
-      /* restoreView後に再描画 */
+      await App.restoreView(m.page, sCX - mcx * cssEZ, sCY - mcy * cssEZ, App.scale);
       await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
       _syncHlCanvas();
       await _drawHighlights();
@@ -5540,9 +5567,7 @@ const TextSearch = (() => {
   }
 
   /* ════════════════════════════════════════════════════════
-     検索実行 (debounce)
-     クエリが変化したときのみ再マッチ構築。
-     インデックスは _buildAllIndex でキャッシュ済み。
+     検索実行 (変更なし)
      ════════════════════════════════════════════════════════ */
   let _debTimer = null;
   function _onInput() {
@@ -5553,11 +5578,9 @@ const TextSearch = (() => {
   async function _execSearch() {
     const raw  = _inputEl ? _inputEl.value : '';
     const norm = _normalize(raw);
-    /* クエリ変化なし → スキップ */
     if (norm === _query && raw === _rawQuery) return;
     _rawQuery = raw;
     _query    = norm;
-
     if (!_query) {
       _matches = [];
       _curIdx  = -1;
@@ -5566,13 +5589,10 @@ const TextSearch = (() => {
       if (_listPopEl && _listPopEl.classList.contains('on')) _updateListPop();
       return;
     }
-
-    /* 現在ページのインデックスが未完なら先に確保 */
     if (!_idx[App.currentPage]) {
       await _buildPdfPage(App.currentPage);
       _buildAnnotationPage(App.currentPage);
     }
-
     _buildMatches();
     _curIdx = -1;
     _goToNearest();
@@ -5583,14 +5603,13 @@ const TextSearch = (() => {
   }
 
   /* ════════════════════════════════════════════════════════
-     公開API
+     公開API (変更なし)
      ════════════════════════════════════════════════════════ */
   function open() {
     if (!App.pdfDoc) { showToast('PDFが開かれていません'); return; }
     _isOpen = true;
     if (_barEl) _barEl.style.display = 'flex';
     if (_inputEl) { _inputEl.value = _rawQuery; _inputEl.focus(); _inputEl.select(); }
-    /* pdfDoc変更時はキャッシュ破棄してリビルド */
     if (_idxDoc !== App.pdfDoc) { _idx = {}; _idxDoc = null; }
     _buildAllIndex().catch(() => {});
   }
@@ -5635,7 +5654,7 @@ const TextSearch = (() => {
   }
 
   /* ════════════════════════════════════════════════════════
-     初期化
+     初期化 (変更なし)
      ════════════════════════════════════════════════════════ */
   function init() {
     _barEl     = document.getElementById('search-bar');
@@ -5645,21 +5664,17 @@ const TextSearch = (() => {
     _hlCvs     = document.getElementById('srch-hl-cvs');
     if (_hlCvs) _hlCtx = _hlCvs.getContext('2d');
 
-    /* 検索ボタン */
     const openBtn = document.getElementById('btn-search');
     if (openBtn) openBtn.addEventListener('click', () => { open(); }, { passive: true });
 
-    /* 閉じるボタン */
     const closeBtn = document.getElementById('search-close');
     if (closeBtn) closeBtn.addEventListener('click', () => { close(); }, { passive: true });
 
-    /* 前へ・次へ */
     const prevBtn = document.getElementById('search-prev');
     const nextBtn = document.getElementById('search-next');
     if (prevBtn) prevBtn.addEventListener('click', () => { prev(); }, { passive: true });
     if (nextBtn) nextBtn.addEventListener('click', () => { next(); }, { passive: true });
 
-    /* 一覧ボタン */
     const listBtn = document.getElementById('search-list-btn');
     if (listBtn) listBtn.addEventListener('click', e => {
       e.stopPropagation();
@@ -5667,13 +5682,11 @@ const TextSearch = (() => {
       _openList();
     }, { passive: false });
 
-    /* 一覧閉じる */
     const liClose = document.getElementById('srch-li-close');
     if (liClose) liClose.addEventListener('click', e => {
       e.stopPropagation(); _closeList();
     }, { passive: false });
 
-    /* 検索入力 */
     if (_inputEl) {
       _inputEl.addEventListener('input', _onInput, { passive: true });
       _inputEl.addEventListener('keydown', e => {
@@ -5686,13 +5699,11 @@ const TextSearch = (() => {
       }, { passive: false });
     }
 
-    /* 検索バー外クリックで一覧を閉じる */
     document.addEventListener('pointerdown', e => {
       if (!_listPopEl || !_listPopEl.classList.contains('on')) return;
       if (!_listPopEl.contains(e.target) && e.target !== listBtn) _closeList();
     }, { capture: true, passive: true });
 
-    /* MutationObserver: pdfCvs リサイズ → ハイライト再描画 */
     const pdfCvs = document.getElementById('pdfCvs');
     if (pdfCvs) {
       const moPdf = new MutationObserver(() => {
@@ -5703,8 +5714,6 @@ const TextSearch = (() => {
       moPdf.observe(pdfCvs, { attributes: true, attributeFilter: ['width', 'height'] });
     }
 
-    /* MutationObserver: ドロップゾーン非表示 = PDF読み込み完了
-       PDFを開いた時点でバックグラウンドインデックス構築を開始 */
     const dzEl = document.getElementById('dz');
     if (dzEl) {
       const moDz = new MutationObserver(() => {
@@ -5716,7 +5725,6 @@ const TextSearch = (() => {
       moDz.observe(dzEl, { attributes: true, attributeFilter: ['style'] });
     }
 
-    /* EventBus: stroke:added → 書き込みインデックス更新 */
     EventBus.on('stroke:added', () => {
       if (!_isOpen || !_query) return;
       _buildAnnotationPage(App.currentPage);
@@ -5727,7 +5735,6 @@ const TextSearch = (() => {
       if (_listPopEl && _listPopEl.classList.contains('on')) _updateListPop();
     });
 
-    /* EventBus: stroke:added → PDF変更検知 (新ファイル読み込み時) */
     EventBus.on('stroke:added', () => {
       if (_idxDoc && _idxDoc !== App.pdfDoc) {
         _idx = {}; _idxDoc = null;
@@ -5743,6 +5750,7 @@ const TextSearch = (() => {
 (function() {
   TextSearch.init();
 })();
+
 
 
 /*

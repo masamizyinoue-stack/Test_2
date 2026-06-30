@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
-<title>M_Viewer V3.05</title>
+<title>M_Viewer V3.08</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
 /* ════════════════════════════════════════════════════════════
-   M_Viewer — AERO-GRADE PROFESSIONAL THEME  V3.01
+   M_Viewer — AERO-GRADE PROFESSIONAL THEME  V3.08
    Design: 近未来計器盤 / ガラス調 / 高コントラスト / 低疲労
    方針: 全セレクタ互換・JS無変更・状態(hover/active/on/disabled/focus)完全分離
    ════════════════════════════════════════════════════════════ */
@@ -1184,6 +1184,11 @@ button{font-family:inherit}
 .srch-nav{padding:0 9px!important;font-size:13px!important;}
 /* ── 検索ハイライトキャンバス ── */
 #srch-hl-cvs{position:absolute;top:0;left:0;pointer-events:none}
+/* V3.08: TextLayerスタイル */
+#textLayerDiv{position:absolute;top:0;left:0;pointer-events:none;overflow:hidden;}
+#textLayerDiv span{color:transparent;position:absolute;white-space:pre;cursor:default;transform-origin:0% 0%;line-height:1;}
+.ts-hl{background:rgba(255,200,0,0.45);border-radius:2px;}
+.ts-hl-cur{background:rgba(255,100,0,0.55);border-radius:2px;outline:2px solid rgba(210,50,0,0.90);outline-offset:1px;}
 /* ── 検索結果一覧ポップ (V3.01) ── */
 #search-list-pop{
   display:none;position:fixed;z-index:498;
@@ -1250,7 +1255,7 @@ button{font-family:inherit}
 </div>
 <div id="hdr">
   <div class="hr">
-    <span class="logo" id="logo-ver">M_Viewer <span style="font-size:10px">V3.01</span></span>
+    <span class="logo" id="logo-ver">M_Viewer <span style="font-size:10px">V3.08</span></span>
     <input type="file" id="fileInput" accept="application/pdf" style="display:none">
     <span id="fnlbl">ファイル未選択</span>
     <div class="vs"></div>
@@ -1375,13 +1380,14 @@ button{font-family:inherit}
 <div id="ca">
   <div id="cw" style="display:none">
     <canvas id="pdfCvs"></canvas>
+    <div id="textLayerDiv"></div><!-- V3.08: TextLayer -->
     <canvas id="srch-hl-cvs"></canvas><!-- V3.01: 検索ハイライト -->
     <canvas id="annCvs"></canvas>
     <canvas id="ovlCvs"></canvas>
   </div>
   <div id="dz">
     <div class="dzi">📄</div>
-    <div class="dzm">M_Viewer V3.01</div>
+    <div class="dzm">M_Viewer V3.08</div>
     <div class="dzs">タップして選択 / ドラッグ＆ドロップ<br>ペン・蛍光ペン: Apple Pencil専用<br>その他ツール・スクロール: 指でも操作可<br>2本指でピンチ拡大縮小 (最大800%)</div>
     <button class="dzb" id="dz-open">PDFを開く</button>
   </div>
@@ -1505,7 +1511,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/p
      2. ファイル名 M_Viewer_vN.html を更新
    それ以外 (meta.json / console / title / dzm / ロゴ左上) は自動反映。
    ============================================================ */
-const APP_VER='V3.01'; /* ← ★ バージョンアップ時はここだけ変える */
+const APP_VER='V3.08'; /* ← ★ バージョンアップ時はここだけ変える */
 
 /* v29: PDF_MAX_DPR を 1.5 → 2.0 に変更
    iPad Retina(DPR=2): canvas物理px = CSS px × 2 = 画面物理px → 完全1:1 → ぼやけ解消
@@ -3018,6 +3024,7 @@ const App=(() => {
       requestAnimationFrame(()=>{_updateTransform();}); /* _clampPan重複削除 */
       _pgnEl.value=num;
       _zlblEl.textContent=Math.round(scale*100)+'%';
+      TextSearch.renderTextLayer(page,vp,num).catch(()=>{}); /* V3.08: TextLayer */
     });
   }
 
@@ -5170,6 +5177,7 @@ const TextSearch = (() => {
   /* ── ハイライトキャンバス ── */
   let _hlCvs = null;
   let _hlCtx = null;
+  let _tlDiv = null, _tlVer = 0; /* V3.08: TextLayer */
 
   /* ── UI要素参照 ── */
   let _barEl, _inputEl, _countEl, _listPopEl;
@@ -5238,7 +5246,7 @@ const TextSearch = (() => {
       /* Y座標でグループ化 */
       const lines = [];
       for (const it of items) {
-        const tol = it.h * 0.45;
+        const tol = Math.min(it.h * 0.45, 10); /* [V3.08修正①] 大hアイテムの過剰グループ化防止 */
         let grp = lines.find(g => Math.abs(g.refY - it.y) <= tol);
         if (!grp) { grp = { refY: it.y, items: [] }; lines.push(grp); }
         grp.items.push(it);
@@ -5268,13 +5276,13 @@ const TextSearch = (() => {
           if (!cur) {
             cur = {
               text: it.str, x: it.x, y: it.y, w: iw, h: it.h,
-              parts: [{ cs: 0, ce: it.str.length, x: it.x, w: iw }],
+              parts: [{ cs: 0, ce: it.str.length, x: it.x, w: iw, y: it.y, h: it.h }], /* [V3.08修正③] */
             };
             charOff = it.str.length;
             continue;
           }
           const gap    = it.x - (cur.x + cur.w);
-          const maxGap = cur.h * 1.5;
+          const maxGap = Math.min(cur.h * 1.5, 36); /* [V3.08修正②] 大hアイテムの過剰連結防止 */
           if (gap <= maxGap) {
             const spaceW = cur.h * 0.25;
             if (gap > spaceW && !cur.text.endsWith(' ') && !it.str.startsWith(' ')) {
@@ -5285,13 +5293,13 @@ const TextSearch = (() => {
             const newRight = Math.max(cur.x + cur.w, it.x + iw);
             cur.w = newRight - cur.x;
             if (it.h > cur.h) cur.h = it.h;
-            cur.parts.push({ cs: charOff, ce: charOff + it.str.length, x: it.x, w: iw });
+            cur.parts.push({ cs: charOff, ce: charOff + it.str.length, x: it.x, w: iw, y: it.y, h: it.h }); /* [V3.08修正③] */
             charOff += it.str.length;
           } else {
             if (cur.text.trim()) merged.push(cur);
             cur = {
               text: it.str, x: it.x, y: it.y, w: iw, h: it.h,
-              parts: [{ cs: 0, ce: it.str.length, x: it.x, w: iw }],
+              parts: [{ cs: 0, ce: it.str.length, x: it.x, w: iw, y: it.y, h: it.h }], /* [V3.08修正③] */
             };
             charOff = it.str.length;
           }
@@ -5368,12 +5376,13 @@ const TextSearch = (() => {
             const hitEnd = hitPos + normQLen;
             let hx, hw;
 
+            let startPart = null, endPart = null; /* [V3.08修正①] スコープバグ修正 */
             if (item.parts && item.parts.length > 0) {
               /* partsマップからマッチ範囲をカバーするアイテムを特定 */
               /* 開始アイテム: cs <= hitPos < ce */
-              let startPart = item.parts.find(p => p.cs <= hitPos && p.ce > hitPos);
+              startPart = item.parts.find(p => p.cs <= hitPos && p.ce > hitPos);
               /* 終了アイテム: cs < hitEnd <= ce */
-              let endPart   = item.parts.slice().reverse()
+              endPart   = item.parts.slice().reverse()
                                 .find(p => p.cs < hitEnd && p.ce >= hitEnd);
               /* フォールバック */
               if (!startPart) startPart = item.parts.find(p => p.cs >= hitPos) || item.parts[0];
@@ -5389,8 +5398,8 @@ const TextSearch = (() => {
 
             _matches.push({
               page: pg, source: src,
-              x: hx, y: item.y,
-              w: hw, h: item.h,
+              x: hx, y: (startPart && startPart.y !== undefined) ? startPart.y : item.y, /* [V3.08修正④] 正確なY位置 */
+              w: hw, h: (startPart && startPart.h !== undefined) ? startPart.h : item.h, /* [V3.08修正④] 正確なフォント高 */
               context: item.text,
             });
           }
@@ -5425,6 +5434,49 @@ const TextSearch = (() => {
   /* ════════════════════════════════════════════════════════
      ハイライト描画 (変更なし: 座標計算は正しいため維持)
      ════════════════════════════════════════════════════════ */
+  /* V3.08: TextLayerハイライト適用 */
+  function _applyTextLayerHighlights() {
+    if (!_tlDiv || !_query || !_isOpen) return;
+    const normQ = _normalize(_query);
+    if (!normQ) return;
+    _tlDiv.querySelectorAll('.ts-hl,.ts-hl-cur').forEach(el =>
+      el.classList.remove('ts-hl', 'ts-hl-cur'));
+    const curPage   = App.currentPage;
+    const prevCount = _matches.filter(m => m.page < curPage).length;
+    const localTarget = (_curIdx >= 0) ? _curIdx - prevCount : -1;
+    let localIdx = 0;
+    _tlDiv.querySelectorAll('span').forEach(span => {
+      if (_normalize(span.textContent || '').includes(normQ)) {
+        span.classList.add(localIdx === localTarget ? 'ts-hl-cur' : 'ts-hl');
+        localIdx++;
+      }
+    });
+  }
+
+  /* V3.08: PDF.js renderTextLayer 呼び出し */
+  async function renderTextLayer(page, vp, pageNum) {
+    if (!_tlDiv) return;
+    if (typeof pdfjsLib === 'undefined' ||
+        typeof pdfjsLib.renderTextLayer !== 'function') return;
+    const myVer = ++_tlVer;
+    _tlDiv.innerHTML = '';
+    _tlDiv.style.width  = vp.width  + 'px';
+    _tlDiv.style.height = vp.height + 'px';
+    try {
+      const tc   = await page.getTextContent();
+      if (myVer !== _tlVer) return;
+      const task = pdfjsLib.renderTextLayer({
+        textContent : tc,
+        container   : _tlDiv,
+        viewport    : vp,
+        textDivs    : [],
+      });
+      await task.promise;
+      if (myVer !== _tlVer) return;
+    } catch (_) { return; }
+    if (_isOpen && _query) _applyTextLayerHighlights();
+  }
+
   function _syncHlCanvas() {
     const annCvs = document.getElementById('annCvs');
     if (!annCvs || !_hlCvs) return;
@@ -5435,54 +5487,12 @@ const TextSearch = (() => {
   }
 
   async function _drawHighlights() {
-    if (!_hlCvs || !_hlCtx) return;
-    _syncHlCanvas();
-    _hlCtx.clearRect(0, 0, _hlCvs.width, _hlCvs.height);
-    if (!_query || !_matches.length || !App.pdfDoc) return;
-
-    const curPage = App.currentPage;
-    const pageMtch = [];
-    _matches.forEach((m, gi) => { if (m.page === curPage) pageMtch.push({ m, gi }); });
-    if (!pageMtch.length) return;
-
-    let vp;
-    try {
-      const page   = await App.pdfDoc.getPage(curPage);
-      const vp1    = page.getViewport({ scale: 1 });
-      const maxDim = Math.max(vp1.width, vp1.height);
-      const rs     = Math.min(App.scale, MAX_CANVAS / maxDim);
-      vp = page.getViewport({ scale: rs });
-    } catch (_) { return; }
-
-    _hlCtx.save();
-    const PAD = 2; /* 文字への余白 (canvas px) */
-    for (const { m, gi } of pageMtch) {
-      const isCur = gi === _curIdx;
-      /* ascent≈h*0.85, descent≈h*0.20 で文字全体をカバー */
-      const tl = Utils.pdfToCanvas(m.x,       m.y + m.h * 0.85, vp.transform);
-      const br = Utils.pdfToCanvas(m.x + m.w, m.y - m.h * 0.20, vp.transform);
-      const rx = Math.min(tl.x, br.x) - PAD;
-      const ry = Math.min(tl.y, br.y) - PAD;
-      const rw = Math.abs(br.x - tl.x) + PAD * 2;
-      const rh = Math.abs(br.y - tl.y) + PAD * 2;
-      if (rw < 1 || rh < 1) continue;
-
-      _hlCtx.lineJoin = 'miter';
-      if (isCur) {
-        _hlCtx.strokeStyle = HL_COLOR_CURRENT_OUT;
-        _hlCtx.lineWidth   = 3.5;
-        _hlCtx.strokeRect(Math.round(rx) - 1, Math.round(ry) - 1,
-                          Math.ceil(rw) + 2, Math.ceil(rh) + 2);
-        _hlCtx.strokeStyle = HL_COLOR_CURRENT_IN;
-        _hlCtx.lineWidth   = 2;
-        _hlCtx.strokeRect(Math.round(rx), Math.round(ry), Math.ceil(rw), Math.ceil(rh));
-      } else {
-        _hlCtx.strokeStyle = HL_COLOR_NORMAL;
-        _hlCtx.lineWidth   = 2;
-        _hlCtx.strokeRect(Math.round(rx), Math.round(ry), Math.ceil(rw), Math.ceil(rh));
-      }
+    /* V3.08: キャンバスをクリアしてTextLayerハイライトに委譲 */
+    if (_hlCvs && _hlCtx) {
+      _syncHlCanvas();
+      _hlCtx.clearRect(0, 0, _hlCvs.width, _hlCvs.height);
     }
-    _hlCtx.restore();
+    _applyTextLayerHighlights();
   }
 
   /* ════════════════════════════════════════════════════════
@@ -5608,6 +5618,7 @@ const TextSearch = (() => {
   function open() {
     if (!App.pdfDoc) { showToast('PDFが開かれていません'); return; }
     _isOpen = true;
+    document.getElementById('btn-search')?.classList.add('on'); /* [V3.08修正②] 検索ボタン着色 */
     if (_barEl) _barEl.style.display = 'flex';
     if (_inputEl) { _inputEl.value = _rawQuery; _inputEl.focus(); _inputEl.select(); }
     if (_idxDoc !== App.pdfDoc) { _idx = {}; _idxDoc = null; }
@@ -5616,6 +5627,7 @@ const TextSearch = (() => {
 
   function close() {
     _isOpen   = false;
+    document.getElementById('btn-search')?.classList.remove('on'); /* [V3.08修正②] 着色解除 */
     _query    = '';
     _rawQuery = '';
     _matches  = [];
@@ -5644,8 +5656,9 @@ const TextSearch = (() => {
     const listBtn = document.getElementById('search-list-btn');
     if (listBtn) {
       const r = listBtn.getBoundingClientRect();
-      _listPopEl.style.left = Math.max(8, Math.min(r.left, window.innerWidth - 340)) + 'px';
-      _listPopEl.style.top  = (r.bottom + 4) + 'px';
+      _listPopEl.style.left  = ''; /* [V3.08修正③] 右寄せ */
+      _listPopEl.style.right = '8px';
+      _listPopEl.style.top   = (r.bottom + 4) + 'px';
     }
   }
 
@@ -5661,6 +5674,7 @@ const TextSearch = (() => {
     _inputEl   = document.getElementById('search-input');
     _countEl   = document.getElementById('search-count');
     _listPopEl = document.getElementById('search-list-pop');
+    _tlDiv     = document.getElementById('textLayerDiv'); /* V3.08: TextLayer */
     _hlCvs     = document.getElementById('srch-hl-cvs');
     if (_hlCvs) _hlCtx = _hlCvs.getContext('2d');
 
@@ -5693,6 +5707,7 @@ const TextSearch = (() => {
         if (e.key === 'Enter') {
           e.preventDefault();
           if (e.shiftKey) { prev(); } else { next(); }
+          _inputEl.blur(); /* [V3.08修正④] Enterでキーボード非表示(iPad対応) */
         } else if (e.key === 'Escape') {
           e.preventDefault(); close();
         }
@@ -5743,7 +5758,7 @@ const TextSearch = (() => {
     });
   }
 
-  return { init, open, close, next, prev };
+  return { init, open, close, next, prev, renderTextLayer }; /* V3.08 */
 })();
 
 /* TextSearch 初期化 */

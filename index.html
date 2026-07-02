@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
-<title>M_Viewer V3.08</title>
+<title>M_Viewer V3.15</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
 /* ════════════════════════════════════════════════════════════
-   M_Viewer — AERO-GRADE PROFESSIONAL THEME  V3.08
+   M_Viewer — AERO-GRADE PROFESSIONAL THEME  V3.15
    Design: 近未来計器盤 / ガラス調 / 高コントラスト / 低疲労
    方針: 全セレクタ互換・JS無変更・状態(hover/active/on/disabled/focus)完全分離
    ════════════════════════════════════════════════════════════ */
@@ -1255,7 +1255,7 @@ button{font-family:inherit}
 </div>
 <div id="hdr">
   <div class="hr">
-    <span class="logo" id="logo-ver">M_Viewer <span style="font-size:10px">V3.08</span></span>
+    <span class="logo" id="logo-ver">M_Viewer <span style="font-size:10px">V3.15</span></span>
     <input type="file" id="fileInput" accept="application/pdf" style="display:none">
     <span id="fnlbl">ファイル未選択</span>
     <div class="vs"></div>
@@ -1387,7 +1387,7 @@ button{font-family:inherit}
   </div>
   <div id="dz">
     <div class="dzi">📄</div>
-    <div class="dzm">M_Viewer V3.08</div>
+    <div class="dzm">M_Viewer V3.15</div>
     <div class="dzs">タップして選択 / ドラッグ＆ドロップ<br>ペン・蛍光ペン: Apple Pencil専用<br>その他ツール・スクロール: 指でも操作可<br>2本指でピンチ拡大縮小 (最大800%)</div>
     <button class="dzb" id="dz-open">PDFを開く</button>
   </div>
@@ -1511,7 +1511,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/p
      2. ファイル名 M_Viewer_vN.html を更新
    それ以外 (meta.json / console / title / dzm / ロゴ左上) は自動反映。
    ============================================================ */
-const APP_VER='V3.08'; /* ← ★ バージョンアップ時はここだけ変える */
+const APP_VER='V3.15'; /* ← ★ バージョンアップ時はここだけ変える */
 
 /* v29: PDF_MAX_DPR を 1.5 → 2.0 に変更
    iPad Retina(DPR=2): canvas物理px = CSS px × 2 = 画面物理px → 完全1:1 → ぼやけ解消
@@ -1524,8 +1524,7 @@ const MAX_CANVAS=3600,MAX_SCALE=8,SAVE_DELAY=1200,PDF_MAX_DPR=2.0;
 const MAX_SUBWIN=2,MAX_STROKES_PER_PAGE=500;
 const SW_COLORS=['#f07800','#00a0ff','#00c060','#ff40a0','#c0c000'];
 const SW_FILLS=['rgba(240,120,0,.12)','rgba(0,160,255,.12)','rgba(0,200,80,.12)','rgba(255,80,160,.12)','rgba(200,200,0,.12)'];
-const PEN_COLORS=[{id:'sw0',c:'#cc2020'},{id:'sw1',c:'#1a1a1a'},{id:'sw2',c:'#1a55cc'},{id:'sw3',c:'#108030'}];
-const HL_COLORS=[{id:'sw0',c:'#ffd700'},{id:'sw1',c:'#50c040'},{id:'sw2',c:'#ff69b4'},{id:'sw3',c:'#40d4e8'}];
+/* V3.15: 未使用のPEN_COLORS/HL_COLORSを削除(死にコード整理) */
 const TOOL_DEFAULT_SIZES={pen:3,hl:3,eraser:20}; /* v16: text/shape削除 */
 
 /* ============================================================
@@ -1583,7 +1582,12 @@ const EventBus=(() => {
 const Utils=(() => {
   function throttle(fn,ms){let last=0,tid=null;return(...a)=>{const now=Date.now();const rem=ms-(now-last);if(rem<=0){clearTimeout(tid);last=now;fn(...a);}else{clearTimeout(tid);tid=setTimeout(()=>{last=Date.now();fn(...a);},rem);}};  }
   function debounce(fn,ms){let tid=null;return(...a)=>{clearTimeout(tid);tid=setTimeout(()=>fn(...a),ms);};}
-  function safeKey(s){return s.replace(/[^a-zA-Z0-9._-]/g,'_').substring(0,100);}
+  function safeKey(s){
+    /* V3.15: 非ASCII(日本語等)が全て'_'に潰れ、同じ長さのファイル名同士でキーが衝突し
+       別PDFの書き込みデータが復元される問題を修正 — フルネームのハッシュを付与して一意化 */
+    let h=5381;for(let i=0;i<s.length;i++)h=(((h<<5)+h)^s.charCodeAt(i))>>>0;
+    return s.replace(/[^a-zA-Z0-9._-]/g,'_').substring(0,80)+'_'+h.toString(36);
+  }
   /* 点からセグメントへの最短距離 */
   function distPtSeg(px,py,ax,ay,bx,by){
     const dx=bx-ax,dy=by-ay,len2=dx*dx+dy*dy;
@@ -2544,6 +2548,13 @@ class SubWin{
       if(this.panSt){this.panSt=null;return;}
       if(this.isDrawing)this._endDraw();
     });
+    /* V3.14: touchcancel対応 — システムジェスチャ等でキャンセルされた際の状態残留防止 */
+    cv.addEventListener('touchcancel',e=>{
+      e.stopPropagation();
+      if(this.pinch&&e.touches.length<2){this._endPinch();return;}
+      if(this.panSt){this.panSt=null;return;}
+      if(this.isDrawing)this._endDraw();
+    });
     cv.addEventListener('wheel',e=>{
       e.preventDefault();e.stopPropagation();
       const r=e.deltaY<0?1.15:.87;
@@ -2557,7 +2568,7 @@ class SubWin{
 
   _pinchDist(t){const dx=t[1].clientX-t[0].clientX,dy=t[1].clientY-t[0].clientY;return Math.sqrt(dx*dx+dy*dy);}
   _pinchMid(t){return{x:(t[0].clientX+t[1].clientX)/2,y:(t[0].clientY+t[1].clientY)/2};}
-  _startPinch(t){const m=this._pinchMid(t),br=this._bodyRect(),bx=m.x-br.left,by=m.y-br.top;this.pinch={d0:this._pinchDist(t),s0:this.innerScale,pdfX:bx/this.innerScale+this.offX,pdfY:by/this.innerScale+this.offY};}
+  _startPinch(t){const m=this._pinchMid(t),br=this._bodyRect(),bx=m.x-br.left,by=m.y-br.top;this.pinch={d0:this._pinchDist(t),s0:this.innerScale,target:this.innerScale,pdfX:bx/this.innerScale+this.offX,pdfY:by/this.innerScale+this.offY};} /* V3.14: target初期化(移動なしで指を離すとundefinedになりサブ窓が壊れるバグ修正) */
   _movePinch(t){const p=this.pinch,r=this._pinchDist(t)/p.d0,m=this._pinchMid(t),br=this._bodyRect();p.lastMx=m.x-br.left;p.lastMy=m.y-br.top;p.target=Math.max(.2,Math.min(8,p.s0*r));const tx=p.lastMx-p.pdfX*p.target,ty=p.lastMy-p.pdfY*p.target,cssR=p.target/p.s0;this.cvs.style.transformOrigin='0 0';this.cvs.style.transform=`translate(${tx}px,${ty}px) scale(${cssR})`;this.zlEl.textContent=Math.round(p.target*100)+'%';}
   _endPinch(){if(!this.pinch)return;const p=this.pinch;this.pinch=null;this.innerScale=p.target;if(p.lastMx!==undefined){this.offX=p.pdfX-p.lastMx/p.target;this.offY=p.pdfY-p.lastMy/p.target;}this.cvs.style.transform='';this._pdfCache=null;this.render();}
   _startPan(t){this.panSt={x0:t.clientX,y0:t.clientY,ox0:this.offX,oy0:this.offY};}
@@ -3183,6 +3194,15 @@ const App=(() => {
     if(panSt){_endPan(e.changedTouches[0]);return;}
     if(isDrawing)_endDraw(e);
   });
+  /* V3.14: touchcancel対応 — 通知センター/システムジェスチャで_stylusDrawing・isDrawing等が残留し
+     以後のタッチが無反応/誤動作になる問題を修正 */
+  caEl.addEventListener('touchcancel',e=>{
+    _panCandidate=null;
+    _stylusDrawing=false;
+    if(pinch&&e.touches.length<2){_endPinch();return;}
+    if(panSt){panSt=null;return;}
+    if(isDrawing)_endDraw(e);
+  });
   caEl.addEventListener('mousedown',e=>{if(pdfDoc){_cancelInertia();_startDraw(e);}});
   caEl.addEventListener('mousemove',e=>{if(isDrawing)_moveDraw(e);else if(panSt)_movePan(e);});
   caEl.addEventListener('mouseup',e=>{_stylusDrawing=false;if(isDrawing)_endDraw(e);else if(panSt)_endPan(e);});  /* v2.34: フォールバックで_stylusDrawingクリア */
@@ -3519,8 +3539,18 @@ const App=(() => {
       _pageCache.clear();SubWinManager.closeAll();
       document.getElementById('dz').style.display='none';
       _hideHome();cwEl.style.display='block';
-      /* 書き込みデータ復元: IDB → 新規 */
-      const saved=await IDBStore.get('f:'+Utils.safeKey(file.name));
+      /* 書き込みデータ復元: IDB(新キー) → 旧キー移行 → DocMgr → 新規
+         V3.15: キー衝突対策。復元データのファイル名が一致しない場合は採用しない */
+      let saved=await IDBStore.get('f:'+Utils.safeKey(file.name));
+      if(saved&&saved.file&&saved.file!==file.name)saved=null; /* 名前検証 */
+      if(!saved){ /* 旧形式キーからの移行読込(ファイル名一致時のみ採用) */
+        const legacy=await IDBStore.get('f:'+file.name.replace(/[^a-zA-Z0-9._-]/g,'_').substring(0,100)).catch(()=>null);
+        if(legacy&&legacy.file===file.name)saved=legacy;
+      }
+      if(!saved){ /* ホーム(DocMgr)側に記録があればそちらから復元(書き込み消失防止) */
+        const d=await DocMgr.findByName(file.name).catch(()=>null);
+        if(d&&d.strokes)saved={strokes:d.strokes};
+      }
       strokes=Utils.pruneEraserStrokes(saved?.strokes||{});
       await renderPage(1);await fit();
       if(saved?.strokes&&Object.keys(saved.strokes).length>0)showToast('📝 書き込みデータを復元しました');
@@ -3819,6 +3849,8 @@ const App=(() => {
     pdfDoc=sh.pdfDoc;origBuf=sh.origBuf;fileName=sh.fileName||'';curPage=sh.curPage||1;
     totalPages=sh.totalPages||0;scale=sh.scale||1;renderScale=sh.renderScale||1;cssExtraZoom=sh.cssExtraZoom||1;
     panX=sh.panX??16;panY=sh.panY??16;strokes=sh.strokes||{};_docId=sh.docId||null;
+    if(_docId)DocMgr.setId(_docId);else DocMgr.reset(); /* V3.14: タブ切替時にDocMgr書込先を同期(別PDFへの誤保存防止) */
+    clearTimeout(_docUpdateTimer); /* V3.15: 旧タブ向けの保留中doc更新が切替後に発火しないよう破棄 */
     _pageCache.clear();selectedIdx=[];selPath=[];
     Object.keys(_undoStack).forEach(k=>delete _undoStack[k]);  /* v2.09: シート切替時クリア */
     Object.keys(_redoStack).forEach(k=>delete _redoStack[k]);
@@ -4102,22 +4134,28 @@ async function addSheet(){
   if(_sheets.length>=MAX_SHEETS){showToast(`タブは最大${MAX_SHEETS}つです`);return;}
   _sheets[_sheetIdx].subWinStates=SubWinManager.freezeAll();
   Object.assign(_sheets[_sheetIdx],App.saveState());
-  SubWinManager.thawAll(_sheets[_sheetIdx].subWinStates,_sheets[_sheetIdx].pdfDoc,App.strokes);
+  /* V3.15: freeze直後のthawAllを削除 — 旧タブのサブ窓が新タブ上に残留し、
+     次のタブ切替で別タブのsubWinStatesへ保存される混線を修正。
+     サブ窓はタブ切替時と同様、元のタブへ戻ったときに復元される */
   const sh=_emptySheet();_sheets.push(sh);_sheetIdx=_sheets.length-1;
   await App.loadState(sh);_renderTabBar();
   document.getElementById('fileInput').click();
 }
 async function closeSheetAt(idx){
   showLoading(true);
-  if(idx===_sheetIdx)_sheets[_sheetIdx].subWinStates=SubWinManager.freezeAll();
+  const wasActive=(idx===_sheetIdx); /* V3.14 */
+  if(wasActive)_sheets[_sheetIdx].subWinStates=SubWinManager.freezeAll();
   if(_sheets[idx].pdfDoc){try{_sheets[idx].pdfDoc.destroy();}catch(_){}_sheets[idx].pdfDoc=null;}
   if(_sheets.length===1){_sheets[0]=_emptySheet();_sheetIdx=0;await App.loadState(_sheets[0]);}
   else{
     _sheets.splice(idx,1);
     if(_sheetIdx>=_sheets.length)_sheetIdx=_sheets.length-1;
     else if(idx<_sheetIdx)_sheetIdx--;
-    await App.loadState(_sheets[_sheetIdx]);
-    SubWinManager.thawAll(_sheets[_sheetIdx].subWinStates||[],_sheets[_sheetIdx].pdfDoc,App.strokes);
+    if(wasActive){ /* V3.14: アクティブタブを閉じた時のみ再ロード — 非アクティブタブを閉じた際に
+                      表示位置が巻き戻り・Undo/Redo履歴が消える問題を修正 */
+      await App.loadState(_sheets[_sheetIdx]);
+      SubWinManager.thawAll(_sheets[_sheetIdx].subWinStates||[],_sheets[_sheetIdx].pdfDoc,App.strokes);
+    }
   }
   _renderTabBar();showLoading(false);_schedSessionSave(); /* v2.41 */
 }
@@ -4882,6 +4920,12 @@ function _initCalculator(){
           }
           _afterEq=true;_justOp=false;
         }
+        /* V3.14: ⌫/±/%/√/x²後に式表示トークンを同期 (履歴の式と計算結果の不一致を修正) */
+        if(['⌫','±','%','sqrt','sq'].includes(fn)&&!_afterEq&&!_justOp){
+          if(_dispTokens.length&&_dispTokens[_dispTokens.length-1].type==='num')
+            _dispTokens[_dispTokens.length-1].val=curInput;
+          _dispExpr=_tokensToStr(_dispTokens);
+        }
       }
       _disp();
     });
@@ -5157,9 +5201,7 @@ const TextSearch = (() => {
   'use strict';
 
   /* ── 定数 ── */
-  const HL_COLOR_NORMAL      = 'rgba(210,0,0,0.90)';    /* 赤枠: 通常一致 */
-  const HL_COLOR_CURRENT_IN  = 'rgba(210,0,0,1.0)';    /* 現在位置: 内枠(赤) */
-  const HL_COLOR_CURRENT_OUT = 'rgba(255,110,0,1.0)';  /* 現在位置: 外枠(オレンジ) */
+  /* V3.15: 未使用のHL_COLOR_*定数3件を削除(死にコード整理) */
   const DEBOUNCE_MS = 200;
 
   /* ── 状態 ── */
@@ -5177,7 +5219,7 @@ const TextSearch = (() => {
   /* ── ハイライトキャンバス ── */
   let _hlCvs = null;
   let _hlCtx = null;
-  let _tlDiv = null, _tlVer = 0; /* V3.08: TextLayer */
+  let _renderVP = null; /* V3.13: キャンバス描画用VP */ /* V3.15: 未使用の_tlDiv/_tlVerを削除 */
 
   /* ── UI要素参照 ── */
   let _barEl, _inputEl, _countEl, _listPopEl;
@@ -5197,20 +5239,30 @@ const TextSearch = (() => {
   }
 
   /* ════════════════════════════════════════════════════════
-     [修正①] _findAll: pos += n.length で重複しないように前進
-     旧: pos++ → 重複マッチ(overlapping)が発生していた
-     ════════════════════════════════════════════════════════ */
-  function _findAll(haystack, needle) {
-    const h = _normalize(haystack);
-    const n = _normalize(needle);
-    const result = [];
-    if (!n) return result;
-    let pos = 0;
-    while ((pos = h.indexOf(n, pos)) !== -1) {
-      result.push(pos);
-      pos += n.length;   /* ← 修正: pos++ → pos += n.length (重複ヒット防止) */
+     V3.15: _normalizeMap — 正規化しつつ「正規化後の各文字が
+     生テキストの何文字目由来か」のマップを返す。
+     partsマップ(生文字位置)との不整合(連続スペース等でのハイライトずれ)を解消。
+     _normalize() と同一の正規化結果になるよう1文字ずつ同順で変換する。
+     (旧 _findAll は本関数使用に伴い削除) ════════════════════ */
+  function _normChar(c) {
+    const cc = c.charCodeAt(0);
+    if (cc >= 0xFF01 && cc <= 0xFF5E) c = String.fromCharCode(cc - 0xFEE0);
+    if (c === '　') c = ' ';
+    if (c >= 'A' && c <= 'Z') c = c.toLowerCase();
+    if ('‐‑‒–—―ー－＊*'.includes(c)) c = '-';
+    if (c === '×') c = 'x';
+    return c;
+  }
+  function _normalizeMap(s) {
+    const map = []; let out = ''; let ws = -1;
+    s = s || '';
+    for (let i = 0; i < s.length; i++) {
+      const c = _normChar(s[i]);
+      if (/\s/.test(c)) { if (out && ws < 0) ws = i; continue; } /* 連続空白は1つに・先頭/末尾は除去 */
+      if (ws >= 0) { out += ' '; map.push(ws); ws = -1; }
+      out += c; map.push(i);
     }
-    return result;
+    return { norm: out, map };
   }
 
   /* ════════════════════════════════════════════════════════
@@ -5338,7 +5390,7 @@ const TextSearch = (() => {
       if (_query) {
         _buildMatches();
         _updateCount();
-        if (_hlCvs && App.currentPage <= pg) _drawHighlights();
+        if (_hlCvs && App.currentPage <= pg) _drawHighlights().catch(() => {}); /* V3.13 */
       }
     }
     _idxBusy = false;
@@ -5346,7 +5398,7 @@ const TextSearch = (() => {
       _buildMatches();
       _curIdx = _clampIdx(_curIdx);
       _updateCount();
-      _drawHighlights();
+      _drawHighlights().catch(() => {}); /* V3.13 */
     }
   }
 
@@ -5369,29 +5421,34 @@ const TextSearch = (() => {
       if (!pi) continue;
       for (const src of SOURCES) {
         for (const item of (pi[src] || [])) {
-          const hits = _findAll(item.text, _query);
+          /* V3.15: 正規化位置マップを構築し、生テキスト位置に変換してからpartsを参照 */
+          const nm = _normalizeMap(item.text);
+          const hits = [];
+          { let pos = 0;
+            while ((pos = nm.norm.indexOf(normQ, pos)) !== -1) { hits.push(pos); pos += normQLen; } }
           if (!hits.length) continue;
 
           for (const hitPos of hits) {
             const hitEnd = hitPos + normQLen;
+            /* V3.15: 正規化位置 → 生テキスト位置 */
+            const rawStart = nm.map[hitPos] ?? 0;
+            const rawEnd   = (nm.map[Math.min(hitEnd, nm.map.length) - 1] ?? (item.text.length - 1)) + 1;
             let hx, hw;
 
             let startPart = null, endPart = null; /* [V3.08修正①] スコープバグ修正 */
             if (item.parts && item.parts.length > 0) {
-              /* partsマップからマッチ範囲をカバーするアイテムを特定 */
-              /* 開始アイテム: cs <= hitPos < ce */
-              startPart = item.parts.find(p => p.cs <= hitPos && p.ce > hitPos);
-              /* 終了アイテム: cs < hitEnd <= ce */
+              /* partsマップからマッチ範囲をカバーするアイテムを特定 (生文字位置で照合) */
+              startPart = item.parts.find(p => p.cs <= rawStart && p.ce > rawStart);
               endPart   = item.parts.slice().reverse()
-                                .find(p => p.cs < hitEnd && p.ce >= hitEnd);
+                                .find(p => p.cs < rawEnd && p.ce >= rawEnd);
               /* フォールバック */
-              if (!startPart) startPart = item.parts.find(p => p.cs >= hitPos) || item.parts[0];
-              if (!endPart)   endPart   = item.parts.find(p => p.ce >= hitEnd) || item.parts[item.parts.length - 1];
+              if (!startPart) startPart = item.parts.find(p => p.cs >= rawStart) || item.parts[0];
+              if (!endPart)   endPart   = item.parts.find(p => p.ce >= rawEnd) || item.parts[item.parts.length - 1];
               hx = startPart.x;
               hw = Math.max((endPart.x + endPart.w) - startPart.x, 4);
             } else {
               /* フォールバック: 比率推測 */
-              const normLen = _normalize(item.text).length || 1;
+              const normLen = nm.norm.length || 1;
               hx = item.x + item.w * hitPos / normLen;
               hw = Math.max(item.w * normQLen / normLen, 4);
             }
@@ -5434,65 +5491,51 @@ const TextSearch = (() => {
   /* ════════════════════════════════════════════════════════
      ハイライト描画 (変更なし: 座標計算は正しいため維持)
      ════════════════════════════════════════════════════════ */
-  /* V3.08: TextLayerハイライト適用 */
-  function _applyTextLayerHighlights() {
-    if (!_tlDiv || !_query || !_isOpen) return;
-    const normQ = _normalize(_query);
-    if (!normQ) return;
-    _tlDiv.querySelectorAll('.ts-hl,.ts-hl-cur').forEach(el =>
-      el.classList.remove('ts-hl', 'ts-hl-cur'));
-    const curPage   = App.currentPage;
-    const prevCount = _matches.filter(m => m.page < curPage).length;
-    const localTarget = (_curIdx >= 0) ? _curIdx - prevCount : -1;
-    let localIdx = 0;
-    _tlDiv.querySelectorAll('span').forEach(span => {
-      if (_normalize(span.textContent || '').includes(normQ)) {
-        span.classList.add(localIdx === localTarget ? 'ts-hl-cur' : 'ts-hl');
-        localIdx++;
-      }
-    });
-  }
+  /* V3.15: 未使用の_applyTextLayerHighlights()を削除(V3.13でスパン生成廃止済み) */
 
   /* V3.08: PDF.js renderTextLayer 呼び出し */
   async function renderTextLayer(page, vp, pageNum) {
-    if (!_tlDiv) return;
-    if (typeof pdfjsLib === 'undefined' ||
-        typeof pdfjsLib.renderTextLayer !== 'function') return;
-    const myVer = ++_tlVer;
-    _tlDiv.innerHTML = '';
-    _tlDiv.style.width  = vp.width  + 'px';
-    _tlDiv.style.height = vp.height + 'px';
-    try {
-      const tc   = await page.getTextContent();
-      if (myVer !== _tlVer) return;
-      const task = pdfjsLib.renderTextLayer({
-        textContent : tc,
-        container   : _tlDiv,
-        viewport    : vp,
-        textDivs    : [],
-      });
-      await task.promise;
-      if (myVer !== _tlVer) return;
-    } catch (_) { return; }
-    if (_isOpen && _query) _applyTextLayerHighlights();
+    /* V3.13修正: スパン生成廃止 → vpを保存してキャンバス描画 */
+    _renderVP = vp;
+    console.debug('[TextSearch] renderTextLayer pg='+pageNum+' w='+Math.round(vp.width)+' h='+Math.round(vp.height));
+    if (_isOpen && _query) await _drawHighlights();
   }
 
   function _syncHlCanvas() {
-    const annCvs = document.getElementById('annCvs');
-    if (!annCvs || !_hlCvs) return;
-    if (_hlCvs.width !== annCvs.width || _hlCvs.height !== annCvs.height) {
-      _hlCvs.width  = annCvs.width;
-      _hlCvs.height = annCvs.height;
+    /* V3.13修正(BUG-3): DOM検索廃止→_renderVPのサイズを使用 */
+    if (!_hlCvs || !_renderVP) return;
+    const w = Math.round(_renderVP.width), h = Math.round(_renderVP.height);
+    if (_hlCvs.width !== w || _hlCvs.height !== h) {
+      _hlCvs.width  = w;
+      _hlCvs.height = h;
     }
   }
 
   async function _drawHighlights() {
-    /* V3.08: キャンバスをクリアしてTextLayerハイライトに委譲 */
-    if (_hlCvs && _hlCtx) {
-      _syncHlCanvas();
-      _hlCtx.clearRect(0, 0, _hlCvs.width, _hlCvs.height);
-    }
-    _applyTextLayerHighlights();
+    /* V3.13修正: PDF座標→canvas座標変換で正確に描画 */
+    if (!_hlCvs || !_hlCtx) return;
+    _syncHlCanvas();
+    _hlCtx.clearRect(0, 0, _hlCvs.width, _hlCvs.height);
+    if (!_renderVP || !_isOpen || !_query || !_matches.length) return;
+    console.debug('[TextSearch] _drawHighlights matches='+_matches.length+' curIdx='+_curIdx);
+    const vp  = _renderVP;
+    const cur = App.currentPage;
+    _matches.forEach(function(m, idx) {
+      if (m.page !== cur) return;
+      const tl = Utils.pdfToCanvas(m.x,       m.y + m.h, vp.transform);
+      const br = Utils.pdfToCanvas(m.x + m.w, m.y,       vp.transform);
+      const rx = Math.min(tl.x, br.x);
+      const ry = Math.min(tl.y, br.y);
+      const rw = Math.abs(br.x - tl.x);
+      const rh = Math.abs(br.y - tl.y);
+      _hlCtx.fillStyle = (idx === _curIdx) ? 'rgba(255,100,0,0.55)' : 'rgba(255,200,0,0.40)';
+      _hlCtx.fillRect(rx, ry, rw, rh);
+      if (idx === _curIdx) {
+        _hlCtx.strokeStyle = 'rgba(210,50,0,0.90)';
+        _hlCtx.lineWidth   = 2;
+        _hlCtx.strokeRect(rx, ry, rw, rh);
+      }
+    });
   }
 
   /* ════════════════════════════════════════════════════════
@@ -5568,7 +5611,7 @@ const TextSearch = (() => {
     } catch (_) {}
   }
 
-  function _goToNearest() {
+  function _goToNearest() { /* V3.13: async revert (await起因の画面消失バグ防止) */
     if (!_matches.length) return;
     const curPage = App.currentPage;
     let idx = _matches.findIndex(m => m.page >= curPage);
@@ -5605,10 +5648,10 @@ const TextSearch = (() => {
     }
     _buildMatches();
     _curIdx = -1;
-    _goToNearest();
+    _goToNearest(); /* V3.13: await削除 (renderTextLayerがVP更新後に描画するため) */
     _updateCount();
     _syncHlCanvas();
-    _drawHighlights();
+    _drawHighlights().catch(() => {});
     if (_listPopEl && _listPopEl.classList.contains('on')) _updateListPop();
   }
 
@@ -5674,7 +5717,6 @@ const TextSearch = (() => {
     _inputEl   = document.getElementById('search-input');
     _countEl   = document.getElementById('search-count');
     _listPopEl = document.getElementById('search-list-pop');
-    _tlDiv     = document.getElementById('textLayerDiv'); /* V3.08: TextLayer */
     _hlCvs     = document.getElementById('srch-hl-cvs');
     if (_hlCvs) _hlCtx = _hlCvs.getContext('2d');
 
@@ -5722,9 +5764,8 @@ const TextSearch = (() => {
     const pdfCvs = document.getElementById('pdfCvs');
     if (pdfCvs) {
       const moPdf = new MutationObserver(() => {
-        if (!_isOpen || !_query) return;
-        _syncHlCanvas();
-        _drawHighlights();
+        /* V3.13修正(BUG-2): 発火タイミングが_renderVP/annCvs更新前のため描画削除。
+           renderTextLayerが正しいタイミングで_syncHlCanvas+_drawHighlightsを呼ぶ。 */
       });
       moPdf.observe(pdfCvs, { attributes: true, attributeFilter: ['width', 'height'] });
     }
@@ -5740,7 +5781,13 @@ const TextSearch = (() => {
       moDz.observe(dzEl, { attributes: true, attributeFilter: ['style'] });
     }
 
+    /* V3.13修正(BUG-1): 重複登録(2つ)を1ハンドラに統合 */
     EventBus.on('stroke:added', () => {
+      if (_idxDoc && _idxDoc !== App.pdfDoc) {
+        _idx = {}; _idxDoc = null;
+        if (_isOpen) _buildAllIndex().catch(() => {});
+        return;
+      }
       if (!_isOpen || !_query) return;
       _buildAnnotationPage(App.currentPage);
       _buildMatches();
@@ -5748,13 +5795,6 @@ const TextSearch = (() => {
       _updateCount();
       _drawHighlights();
       if (_listPopEl && _listPopEl.classList.contains('on')) _updateListPop();
-    });
-
-    EventBus.on('stroke:added', () => {
-      if (_idxDoc && _idxDoc !== App.pdfDoc) {
-        _idx = {}; _idxDoc = null;
-        if (_isOpen) _buildAllIndex().catch(() => {});
-      }
     });
   }
 
@@ -5814,4 +5854,3 @@ const TextSearch = (() => {
 </script>
 </body>
 </html>
-     

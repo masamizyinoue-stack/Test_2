@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
-<title>M_Viewer V5.06</title>
+<title>M_Viewer V5.07</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
 /* ════════════════════════════════════════════════════════════
-   M_Viewer — AERO-GRADE PROFESSIONAL THEME  V5.06 (HUD ORANGE)
+   M_Viewer — AERO-GRADE PROFESSIONAL THEME  V5.07 (HUD ORANGE)
    Design: 近未来計器盤 / ガラス調 / 高コントラスト / 低疲労
    方針: 全セレクタ互換・JS無変更・状態(hover/active/on/disabled/focus)完全分離
    ════════════════════════════════════════════════════════════ */
@@ -1261,7 +1261,7 @@ button{font-family:inherit}
 </div>
 <div id="hdr">
   <div class="hr">
-    <span class="logo" id="logo-ver">M_Viewer <span style="font-size:10px">V5.06</span></span>
+    <span class="logo" id="logo-ver">M_Viewer <span style="font-size:10px">V5.07</span></span>
     <input type="file" id="fileInput" accept="application/pdf" style="display:none">
     <span id="fnlbl">ファイル未選択</span>
     <div class="vs"></div>
@@ -1392,7 +1392,7 @@ button{font-family:inherit}
   </div>
   <div id="dz">
     <div class="dzi">📄</div>
-    <div class="dzm">M_Viewer V5.06</div>
+    <div class="dzm">M_Viewer V5.07</div>
     <div class="dzs">タップして選択 / ドラッグ＆ドロップ<br>ペン・蛍光ペン: Apple Pencil専用<br>その他ツール・スクロール: 指でも操作可<br>2本指でピンチ拡大縮小 (最大800%)</div>
     <button class="dzb" id="dz-open">PDFを開く</button>
   </div>
@@ -1516,7 +1516,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/p
      2. ファイル名 M_Viewer_vN.html を更新
    それ以外 (meta.json / console / title / dzm / ロゴ左上) は自動反映。
    ============================================================ */
-const APP_VER='V5.06'; /* ← ★ バージョンアップ時はここだけ変える */
+const APP_VER='V5.07'; /* ← ★ バージョンアップ時はここだけ変える */
 
 /* v29: PDF_MAX_DPR を 1.5 → 2.0 に変更
    iPad Retina(DPR=2): canvas物理px = CSS px × 2 = 画面物理px → 完全1:1 → ぼやけ解消
@@ -2425,6 +2425,7 @@ class SubWin{
     this._renderVer=0;this._pdfCache=null;this._pdfCacheKey=''; /* V5.06: 領域キャッシュ */
     this._navCvs=null;this._navSc=0;this._navPg=-1;this._navBusy=false; /* V5.06: パン/ピンチ用低解像度全体キャッシュ */
     this._panRaf=null;this._wheelT=null;this._dpr=1;
+    this._snap=null;this._snapOx=0;this._snapOy=0;this._snapSc=0;this._snapDpr=1;this._gestT=null; /* V5.07: 精細スナップショット+操作中render */
     this._annCvs=null;this._annDirty=true;this._cleanups=[];this._drawRafId=null;
     this._pageObj=null;this._pageObjNum=-1; /* getPage()キャッシュ */
     const idx=SubWinManager.count();
@@ -2534,6 +2535,12 @@ class SubWin{
     }else{this.ctx.clearRect(0,0,rw,rh);}
     this.ctx.drawImage(this._pdfCache,0,0);
     this.ctx.drawImage(this._annCvs,0,0);
+    /* V5.07: 直前の精細PDF画像を保持(操作中プレビューの基材。書込みはベクタで都度重ねるため含めない) */
+    if(!this._snap)this._snap=document.createElement('canvas');
+    if(this._snap.width!==rw||this._snap.height!==rh){this._snap.width=rw;this._snap.height=rh;}
+    const sctx=this._snap.getContext('2d');
+    sctx.clearRect(0,0,rw,rh);sctx.drawImage(this._pdfCache,0,0);
+    this._snapOx=this.offX;this._snapOy=this.offY;this._snapSc=sc;this._snapDpr=dpr;
     this._updateTransform();
     this.zlEl.textContent=Math.round(sc*100)+'%';
     this.el?.classList.remove('swn-loading');
@@ -2559,19 +2566,27 @@ class SubWin{
   /* V5.06: navキャッシュから指定(ox,oy,scale)の可視領域を即時プレビュー描画。
      nav未生成時はfalseを返す(呼び元でフォールバック) */
   _navPreviewAt(ox,oy,s){
-    if(!this._navCvs)return false;
     const cw=this.cvs.width,ch=this.cvs.height;
     if(!cw||!ch)return false;
+    if(!this._navCvs&&!this._snap)return false; /* V5.07: どちらかあればプレビュー可 */
     const dpr=this._dpr||1,nSc=this._navSc;
-    const sx=ox*nSc,sy=oy*nSc,sw=cw/(dpr*s)*nSc,sh=ch/(dpr*s)*nSc;
     const ctx=this.ctx;
     ctx.clearRect(0,0,cw,ch);
-    const ix1=Math.max(0,sx),iy1=Math.max(0,sy),
-          ix2=Math.min(this._navCvs.width,sx+sw),iy2=Math.min(this._navCvs.height,sy+sh);
-    if(ix2>ix1&&iy2>iy1){
-      const kx=cw/sw,ky=ch/sh;
-      ctx.drawImage(this._navCvs,ix1,iy1,ix2-ix1,iy2-iy1,
-                    (ix1-sx)*kx,(iy1-sy)*ky,(ix2-ix1)*kx,(iy2-iy1)*ky);
+    if(this._navCvs){ /* 背景層: 低解像度全体(新規露出部の穴埋め用) */
+      const sx=ox*nSc,sy=oy*nSc,sw=cw/(dpr*s)*nSc,sh=ch/(dpr*s)*nSc;
+      const ix1=Math.max(0,sx),iy1=Math.max(0,sy),
+            ix2=Math.min(this._navCvs.width,sx+sw),iy2=Math.min(this._navCvs.height,sy+sh);
+      if(ix2>ix1&&iy2>iy1){
+        const kx=cw/sw,ky=ch/sh;
+        ctx.drawImage(this._navCvs,ix1,iy1,ix2-ix1,iy2-iy1,
+                      (ix1-sx)*kx,(iy1-sy)*ky,(ix2-ix1)*kx,(iy2-iy1)*ky);
+      }
+    }
+    if(this._snap&&this._snapSc>0){ /* V5.07 前景層: 直前の精細画像をずらし/拡縮して重ねる */
+      const k=(s*dpr)/(this._snapSc*this._snapDpr);
+      const dx=(this._snapOx-ox)*s*dpr,dy=(this._snapOy-oy)*s*dpr;
+      ctx.drawImage(this._snap,0,0,this._snap.width,this._snap.height,
+                    dx,dy,this._snap.width*k,this._snap.height*k);
     }
     try{ /* 書き込みも同座標で重ねる(消えるとスクロール中に不安なため) */
       if(this._pageObj){
@@ -2619,14 +2634,14 @@ class SubWin{
     cv.addEventListener('touchend',e=>{
       e.stopPropagation();
       if(this.pinch&&e.touches.length<2){this._endPinch();return;}
-      if(this.panSt){this.panSt=null;this.cvs.style.transform='';this.render();return;} /* V5.06: パン終了で精細描画 */
+      if(this.panSt){this.panSt=null;this.cvs.style.transform='';clearTimeout(this._gestT);this._gestT=null;this.render();return;} /* V5.06/V5.07 */
       if(this.isDrawing)this._endDraw();
     });
     /* V3.14: touchcancel対応 — システムジェスチャ等でキャンセルされた際の状態残留防止 */
     cv.addEventListener('touchcancel',e=>{
       e.stopPropagation();
       if(this.pinch&&e.touches.length<2){this._endPinch();return;}
-      if(this.panSt){this.panSt=null;this.cvs.style.transform='';this.render();return;} /* V5.06: パン終了で精細描画 */
+      if(this.panSt){this.panSt=null;this.cvs.style.transform='';clearTimeout(this._gestT);this._gestT=null;this.render();return;} /* V5.06/V5.07 */
       if(this.isDrawing)this._endDraw();
     });
     cv.addEventListener('wheel',e=>{
@@ -2650,6 +2665,7 @@ class SubWin{
     p.lastMx=m.x-br.left;p.lastMy=m.y-br.top;
     p.target=Math.max(.2,Math.min(8,p.s0*r));
     const ox=p.pdfX-p.lastMx/p.target,oy=p.pdfY-p.lastMy/p.target,tgt=p.target; /* V5.06: 中間状態をnavで即時表示 */
+    this.offX=ox;this.offY=oy;this.innerScale=tgt; /* V5.07: 裏の精細renderと整合(確定値は_endPinchでp.*から再計算) */
     if(this._panRaf)return;
     this._panRaf=requestAnimationFrame(()=>{this._panRaf=null;
       if(!this._navPreviewAt(ox,oy,tgt)){
@@ -2658,9 +2674,10 @@ class SubWin{
         this.cvs.style.transform='scale('+cssR+')'; /* nav未生成時の近似フォールバック */
       }
       this.zlEl.textContent=Math.round(tgt*100)+'%';
+      if(!this._gestT)this._gestT=setTimeout(()=>{this._gestT=null;this.render();},160); /* V5.07 */
     });
   }
-  _endPinch(){if(!this.pinch)return;const p=this.pinch;this.pinch=null;this.innerScale=p.target;if(p.lastMx!==undefined){this.offX=p.pdfX-p.lastMx/p.target;this.offY=p.pdfY-p.lastMy/p.target;}this.cvs.style.transform='';this.cvs.style.transformOrigin='0 0';this._pdfCache=null;this.render();}
+  _endPinch(){if(!this.pinch)return;const p=this.pinch;this.pinch=null;this.innerScale=p.target;if(p.lastMx!==undefined){this.offX=p.pdfX-p.lastMx/p.target;this.offY=p.pdfY-p.lastMy/p.target;}this.cvs.style.transform='';this.cvs.style.transformOrigin='0 0';this._pdfCache=null;clearTimeout(this._gestT);this._gestT=null;this.render();}
   _startPan(t){this.panSt={x0:t.clientX,y0:t.clientY,ox0:this.offX,oy0:this.offY};}
   _movePan(t){if(!this.panSt)return;
     this.offX=this.panSt.ox0-(t.clientX-this.panSt.x0)/this.innerScale;
@@ -2672,6 +2689,7 @@ class SubWin{
         this.cvs.style.transform=`translate(${dx}px,${dy}px)`; /* nav未生成時のみ一時CSS移動 */
       }
       EventBus.emit('subwin:transform');
+      if(!this._gestT)this._gestT=setTimeout(()=>{this._gestT=null;this.render();},160); /* V5.07: 操作中の逐次精細化 */
     });
   }
 
@@ -2916,12 +2934,12 @@ class SubWin{
     if(this._drawRafId){cancelAnimationFrame(this._drawRafId);this._drawRafId=null;}
     if(this._resizeRAF){cancelAnimationFrame(this._resizeRAF);this._resizeRAF=null;}
     if(this._panRaf){cancelAnimationFrame(this._panRaf);this._panRaf=null;}
-    clearTimeout(this._wheelT); /* V5.06 */
+    clearTimeout(this._wheelT);clearTimeout(this._gestT);this._gestT=null; /* V5.06/V5.07 */
     this._cleanups.forEach(fn=>fn());this._cleanups=[];
     document.body.removeChild(this.el);
     ZManager.unregister(this.el);  /* v2.13 */
     SubWinManager.remove(this);
-    this._pdfCache=null;this._annCvs=null;this._vp=null;this._hvp=null;this._navCvs=null; /* V5.06 */
+    this._pdfCache=null;this._annCvs=null;this._vp=null;this._hvp=null;this._navCvs=null;this._snap=null; /* V5.06/V5.07 */
     this._pageObj=null;this._pageObjNum=-1;
     this.pdfDoc=null;this.strokes=null;
     EventBus.emit('subwin:transform');

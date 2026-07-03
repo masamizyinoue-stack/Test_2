@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
-<title>M_Viewer V5.01</title>
+<title>M_Viewer V5.02</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
 /* ════════════════════════════════════════════════════════════
-   M_Viewer — AERO-GRADE PROFESSIONAL THEME  V5.01
+   M_Viewer — AERO-GRADE PROFESSIONAL THEME  V5.02
    Design: 近未来計器盤 / ガラス調 / 高コントラスト / 低疲労
    方針: 全セレクタ互換・JS無変更・状態(hover/active/on/disabled/focus)完全分離
    ════════════════════════════════════════════════════════════ */
@@ -1255,7 +1255,7 @@ button{font-family:inherit}
 </div>
 <div id="hdr">
   <div class="hr">
-    <span class="logo" id="logo-ver">M_Viewer <span style="font-size:10px">V5.01</span></span>
+    <span class="logo" id="logo-ver">M_Viewer <span style="font-size:10px">V5.02</span></span>
     <input type="file" id="fileInput" accept="application/pdf" style="display:none">
     <span id="fnlbl">ファイル未選択</span>
     <div class="vs"></div>
@@ -1351,7 +1351,6 @@ button{font-family:inherit}
     <span id="search-count" class="srch-cnt"></span>
     <button class="btn srch-nav" id="search-prev" title="前へ (Shift+Enter)">◀</button>
     <button class="btn srch-nav" id="search-next" title="次へ (Enter)">▶</button>
-    <button class="btn" id="search-list-btn">一覧</button>
     <button class="btn rd" id="search-close">✕</button>
   </div>
 </div>
@@ -1387,7 +1386,7 @@ button{font-family:inherit}
   </div>
   <div id="dz">
     <div class="dzi">📄</div>
-    <div class="dzm">M_Viewer V5.01</div>
+    <div class="dzm">M_Viewer V5.02</div>
     <div class="dzs">タップして選択 / ドラッグ＆ドロップ<br>ペン・蛍光ペン: Apple Pencil専用<br>その他ツール・スクロール: 指でも操作可<br>2本指でピンチ拡大縮小 (最大800%)</div>
     <button class="dzb" id="dz-open">PDFを開く</button>
   </div>
@@ -1511,7 +1510,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/p
      2. ファイル名 M_Viewer_vN.html を更新
    それ以外 (meta.json / console / title / dzm / ロゴ左上) は自動反映。
    ============================================================ */
-const APP_VER='V5.01'; /* ← ★ バージョンアップ時はここだけ変える */
+const APP_VER='V5.02'; /* ← ★ バージョンアップ時はここだけ変える */
 
 /* v29: PDF_MAX_DPR を 1.5 → 2.0 に変更
    iPad Retina(DPR=2): canvas物理px = CSS px × 2 = 画面物理px → 完全1:1 → ぼやけ解消
@@ -5639,7 +5638,7 @@ const TextSearch = (() => {
       _curIdx  = -1;
       _updateCount();
       if (_hlCvs && _hlCtx) _hlCtx.clearRect(0, 0, _hlCvs.width, _hlCvs.height);
-      if (_listPopEl && _listPopEl.classList.contains('on')) _updateListPop();
+      _closeList(); /* V5.02: 0文字で候補一覧を自動クローズ */
       return;
     }
     if (!_idx[App.currentPage]) {
@@ -5652,7 +5651,7 @@ const TextSearch = (() => {
     _updateCount();
     _syncHlCanvas();
     _drawHighlights().catch(() => {});
-    if (_listPopEl && _listPopEl.classList.contains('on')) _updateListPop();
+    _openList(); /* V5.02: 入力1文字以上で候補一覧を自動表示・リアルタイム更新 */
   }
 
   /* ════════════════════════════════════════════════════════
@@ -5693,16 +5692,19 @@ const TextSearch = (() => {
   }
 
   function _openList() {
-    if (!_listPopEl || !_matches.length) return;
+    if (!_listPopEl) return;
     _updateListPop();
     _listPopEl.classList.add('on');
-    const listBtn = document.getElementById('search-list-btn');
-    if (listBtn) {
-      const r = listBtn.getBoundingClientRect();
-      _listPopEl.style.left  = ''; /* [V3.08修正③] 右寄せ */
-      _listPopEl.style.right = '8px';
-      _listPopEl.style.top   = (r.bottom + 4) + 'px';
-    }
+    /* V5.02: 検索入力欄の左下(左寄せ)に表示。画面外へのはみ出しを補正 */
+    const anc = _inputEl ? _inputEl.getBoundingClientRect() : null;
+    const ax  = anc ? anc.left : 8;
+    const ay  = anc ? anc.bottom + 4 : 46;
+    const pw  = _listPopEl.offsetWidth || 210;
+    const lx  = Math.max(8, Math.min(ax, window.innerWidth - pw - 8));
+    _listPopEl.style.right = '';
+    _listPopEl.style.left  = lx + 'px';
+    _listPopEl.style.top   = ay + 'px';
+    _listPopEl.style.maxHeight = Math.min(window.innerHeight * 0.6, Math.max(140, window.innerHeight - ay - 8)) + 'px';
   }
 
   function _closeList() {
@@ -5731,13 +5733,6 @@ const TextSearch = (() => {
     if (prevBtn) prevBtn.addEventListener('click', () => { prev(); }, { passive: true });
     if (nextBtn) nextBtn.addEventListener('click', () => { next(); }, { passive: true });
 
-    const listBtn = document.getElementById('search-list-btn');
-    if (listBtn) listBtn.addEventListener('click', e => {
-      e.stopPropagation();
-      if (_listPopEl && _listPopEl.classList.contains('on')) { _closeList(); return; }
-      _openList();
-    }, { passive: false });
-
     const liClose = document.getElementById('srch-li-close');
     if (liClose) liClose.addEventListener('click', e => {
       e.stopPropagation(); _closeList();
@@ -5758,7 +5753,7 @@ const TextSearch = (() => {
 
     document.addEventListener('pointerdown', e => {
       if (!_listPopEl || !_listPopEl.classList.contains('on')) return;
-      if (!_listPopEl.contains(e.target) && e.target !== listBtn) _closeList();
+      if (!_listPopEl.contains(e.target) && e.target !== _inputEl) _closeList(); /* V5.02: 一覧ボタン廃止に伴い判定変更 */
     }, { capture: true, passive: true });
 
     const pdfCvs = document.getElementById('pdfCvs');

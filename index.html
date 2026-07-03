@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
-<title>M_Viewer V5.28</title>
+<title>M_Viewer V5.29</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
 /* ════════════════════════════════════════════════════════════
-   M_Viewer — AERO-GRADE PROFESSIONAL THEME  V5.28 (HUD ORANGE)
+   M_Viewer — AERO-GRADE PROFESSIONAL THEME  V5.29 (HUD ORANGE)
    Design: 近未来計器盤 / ガラス調 / 高コントラスト / 低疲労
    方針: 全セレクタ互換・JS無変更・状態(hover/active/on/disabled/focus)完全分離
    ════════════════════════════════════════════════════════════ */
@@ -1307,7 +1307,7 @@ button{font-family:inherit}
 </div>
 <div id="hdr">
   <div class="hr">
-    <span class="logo" id="logo-ver">M_Viewer <span style="font-size:10px">V5.28</span></span>
+    <span class="logo" id="logo-ver">M_Viewer <span style="font-size:10px">V5.29</span></span>
     <input type="file" id="fileInput" accept="application/pdf" style="display:none">
     <span id="fnlbl">ファイル未選択</span>
     <div class="vs"></div>
@@ -1444,7 +1444,7 @@ button{font-family:inherit}
   </div>
   <div id="dz">
     <div class="dzi">📄</div>
-    <div class="dzm">M_Viewer V5.28</div>
+    <div class="dzm">M_Viewer V5.29</div>
     <div class="dzs">タップして選択 / ドラッグ＆ドロップ<br>ペン・蛍光ペン: Apple Pencil専用<br>その他ツール・スクロール: 指でも操作可<br>2本指でピンチ拡大縮小 (最大800%)</div>
     <button class="dzb" id="dz-open">PDFを開く</button>
   </div>
@@ -1542,9 +1542,9 @@ button{font-family:inherit}
     <button id="pv-fav-btn" title="お気に入りのみ表示">★のみ</button>
     <button id="pv-detail-btn" title="右下(詳細番号欄)を拡大表示">詳細番号モード</button><!-- V5.19 -->
     <span id="pv-detail-cal"><!-- V5.28: 切り出し範囲(幅・高さ)+倍率を個別に手動調整(その場で±→自動記憶) -->
-      <span class="dc-grp"><span class="dc-lbl">幅</span><button id="pv-detail-w-minus">－</button><span id="pv-detail-w-pct" class="dc-pct">25%</span><button id="pv-detail-w-plus">＋</button></span>
-      <span class="dc-grp"><span class="dc-lbl">高さ</span><button id="pv-detail-h-minus">－</button><span id="pv-detail-h-pct" class="dc-pct">14%</span><button id="pv-detail-h-plus">＋</button></span>
-      <span class="dc-grp"><span class="dc-lbl">倍率</span><button id="pv-detail-z-minus">－</button><span id="pv-detail-z-pct" class="dc-pct">2.2x</span><button id="pv-detail-z-plus">＋</button></span>
+      <span class="dc-grp"><span class="dc-lbl">幅</span><button id="pv-detail-w-minus">－</button><span id="pv-detail-w-pct" class="dc-pct">10%</span><button id="pv-detail-w-plus">＋</button></span>
+      <span class="dc-grp"><span class="dc-lbl">高さ</span><button id="pv-detail-h-minus">－</button><span id="pv-detail-h-pct" class="dc-pct">10%</span><button id="pv-detail-h-plus">＋</button></span>
+      <span class="dc-grp"><span class="dc-lbl">倍率</span><button id="pv-detail-z-minus">－</button><span id="pv-detail-z-pct" class="dc-pct">6.0x</span><button id="pv-detail-z-plus">＋</button></span>
     </span>
     <button id="pv-close">閉じる</button>
   </div>
@@ -1576,7 +1576,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/p
      2. ファイル名 M_Viewer_vN.html を更新
    それ以外 (meta.json / console / title / dzm / ロゴ左上) は自動反映。
    ============================================================ */
-const APP_VER='V5.28'; /* ← ★ バージョンアップ時はここだけ変える */
+const APP_VER='V5.29'; /* ← ★ バージョンアップ時はここだけ変える */
 
 /* v29: PDF_MAX_DPR を 1.5 → 2.0 に変更
    iPad Retina(DPR=2): canvas物理px = CSS px × 2 = 画面物理px → 完全1:1 → ぼやけ解消
@@ -2037,8 +2037,8 @@ const PreviewPanel=(() => {
   const DETAIL_CAL_KEY_Z='mv_detail_zoom';
   const DETAIL_ZOOM_MIN=1.0,DETAIL_ZOOM_MAX=6.0,DETAIL_ZOOM_STEP=0.2;
   const DETAIL_DISP_MAX=0.62;      /* 表示サイズの上限(サムネイルを覆い過ぎないように) */
-  let _detailFracW=0.25,_detailFracH=0.14; /* 実測(2階大梁加工図)に基づく初期値 */
-  let _detailZoom=2.2;             /* V5.28: 拡大倍率も可変に(初期値2.2倍) */
+  let _detailFracW=0.10,_detailFracH=0.10; /* V5.29: ご指定によりデフォルト値変更 */
+  let _detailZoom=6.0;             /* V5.29: ご指定によりデフォルト値変更(6.0倍) */
   try{const vw=parseFloat(localStorage.getItem(DETAIL_CAL_KEY_W));if(vw>=DETAIL_FRAC_MIN&&vw<=DETAIL_FRAC_MAX)_detailFracW=vw;}catch(_){}
   try{const vh=parseFloat(localStorage.getItem(DETAIL_CAL_KEY_H));if(vh>=DETAIL_FRAC_MIN&&vh<=DETAIL_FRAC_MAX)_detailFracH=vh;}catch(_){}
   try{const vz=parseFloat(localStorage.getItem(DETAIL_CAL_KEY_Z));if(vz>=DETAIL_ZOOM_MIN&&vz<=DETAIL_ZOOM_MAX)_detailZoom=vz;}catch(_){}

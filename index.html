@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
-<title>M_Viewer V5.29</title>
+<title>M_Viewer V5.30</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
 /* ════════════════════════════════════════════════════════════
-   M_Viewer — AERO-GRADE PROFESSIONAL THEME  V5.29 (HUD ORANGE)
+   M_Viewer — AERO-GRADE PROFESSIONAL THEME  V5.30 (HUD ORANGE)
    Design: 近未来計器盤 / ガラス調 / 高コントラスト / 低疲労
    方針: 全セレクタ互換・JS無変更・状態(hover/active/on/disabled/focus)完全分離
    ════════════════════════════════════════════════════════════ */
@@ -1307,7 +1307,7 @@ button{font-family:inherit}
 </div>
 <div id="hdr">
   <div class="hr">
-    <span class="logo" id="logo-ver">M_Viewer <span style="font-size:10px">V5.29</span></span>
+    <span class="logo" id="logo-ver">M_Viewer <span style="font-size:10px">V5.30</span></span>
     <input type="file" id="fileInput" accept="application/pdf" style="display:none">
     <span id="fnlbl">ファイル未選択</span>
     <div class="vs"></div>
@@ -1444,7 +1444,7 @@ button{font-family:inherit}
   </div>
   <div id="dz">
     <div class="dzi">📄</div>
-    <div class="dzm">M_Viewer V5.29</div>
+    <div class="dzm">M_Viewer V5.30</div>
     <div class="dzs">タップして選択 / ドラッグ＆ドロップ<br>ペン・蛍光ペン: Apple Pencil専用<br>その他ツール・スクロール: 指でも操作可<br>2本指でピンチ拡大縮小 (最大800%)</div>
     <button class="dzb" id="dz-open">PDFを開く</button>
   </div>
@@ -1576,7 +1576,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/p
      2. ファイル名 M_Viewer_vN.html を更新
    それ以外 (meta.json / console / title / dzm / ロゴ左上) は自動反映。
    ============================================================ */
-const APP_VER='V5.29'; /* ← ★ バージョンアップ時はここだけ変える */
+const APP_VER='V5.30'; /* ← ★ バージョンアップ時はここだけ変える */
 
 /* v29: PDF_MAX_DPR を 1.5 → 2.0 に変更
    iPad Retina(DPR=2): canvas物理px = CSS px × 2 = 画面物理px → 完全1:1 → ぼやけ解消
@@ -1599,7 +1599,7 @@ const TOOL_DEFAULT_SIZES={pen:3,hl:3,eraser:20}; /* v16: text/shape削除 */
    責務: 構造化ログ / 性能計測 / 機能フラグ
    ============================================================ */
 const Logger=(() => {
-  let _debug=true;
+  let _debug=false; /* V5.30: 本番はOFF(ホットパスのconsole出力負荷を排除)。必要時はLogger.setDebug(true) */
   const _flags=new Map();
   const _lvl={debug:0,info:1,warn:2,error:3};
   let _min=0;
@@ -1616,6 +1616,7 @@ const Logger=(() => {
     perf(label,fn){const t=performance.now();const r=fn();_debug&&console.debug(`[PERF]${label}:${(performance.now()-t).toFixed(1)}ms`);return r;},
     setLevel(l){_min=_lvl[l]??0;},
     setDebug(v){_debug=v;},
+    get on(){return _debug;}, /* V5.30: ホットパスで引数評価自体をスキップするためのガード用 */
     /* 機能フラグ: DBG互換 */
     flags:{
       subWindowUpdate:true,redraw:true,pdfRender:true,raf:true,
@@ -2133,23 +2134,32 @@ const PreviewPanel=(() => {
       const OVERSAMPLE=2; /* 高画質化のための追加解像度係数 */
       const disp=_detailDispFracs();
       const rasterW=Math.round(_THUMB_W*disp.w*OVERSAMPLE);
-      const sc=rasterW/cropW; /* このスケールでページ全体を描けば、クロップ領域の幅がrasterWになる */
-      const vp=page.getViewport({scale:sc}); /* オフセットなし。回転はPDF.js側で自動処理される */
+      const sc=rasterW/cropW; /* 理想スケール: この倍率で全体を描けばクロップ幅がrasterWになる */
+      /* V5.30(パフォーマンス): 全体ラスタを約2.6MPに上限。従来は幅10%設定で1ページ10MP超の
+         キャンバスをページ数ぶん生成しており、一覧表示や±調整のたびに大きなGC/描画負荷が出ていた。
+         上限内で描画し、切り出し時に目標解像度へ拡大転写(smoothing)することで画質低下を最小化。 */
+      const FULL_MAX_PX=2.6e6;
+      const idealPx=(full.width*sc)*(full.height*sc);
+      const k=Math.min(1,Math.sqrt(FULL_MAX_PX/idealPx));
+      const rsc=sc*k; /* 実レンダリングスケール */
+      const vp=page.getViewport({scale:rsc}); /* オフセットなし。回転はPDF.js側で自動処理される */
       const fullCvs=document.createElement('canvas');
       fullCvs.width=Math.round(vp.width);fullCvs.height=Math.round(vp.height);
       await page.render({canvasContext:fullCvs.getContext('2d'),viewport:vp}).promise;
-      const cw=Math.round(cropW*sc),ch=Math.round(cropH*sc);
-      const sx=fullCvs.width-cw,sy=fullCvs.height-ch; /* 常にfullCvsの右下端が基準(回転に依らず正しい) */
+      const scw=Math.round(cropW*rsc),sch=Math.round(cropH*rsc); /* ソース側クロップ寸法 */
+      const sx=fullCvs.width-scw,sy=fullCvs.height-sch; /* 常にfullCvsの右下端が基準(回転に依らず正しい) */
+      const cw=Math.round(cropW*sc),ch=Math.round(cropH*sc); /* 出力(目標)寸法 */
       const cvs=document.createElement('canvas');
       cvs.width=cw;cvs.height=ch;
       const cctx=cvs.getContext('2d');
-      cctx.drawImage(fullCvs,sx,sy,cw,ch,0,0,cw,ch);
+      cctx.imageSmoothingEnabled=true;cctx.imageSmoothingQuality='high';
+      cctx.drawImage(fullCvs,sx,sy,scw,sch,0,0,cw,ch);
       const arr=(App.strokes&&App.strokes[pageNum])||[];
       if(arr.length){
         const annFull=document.createElement('canvas');
         annFull.width=fullCvs.width;annFull.height=fullCvs.height;
         DrawUtil.drawAnnotations(annFull.getContext('2d'),arr,vp.transform);
-        cctx.drawImage(annFull,sx,sy,cw,ch,0,0,cw,ch);
+        cctx.drawImage(annFull,sx,sy,scw,sch,0,0,cw,ch);
       }
       const url=cvs.toDataURL('image/jpeg',.82);
       _insetCache[pageNum]=url;_insetSig[pageNum]=sig;return url;
@@ -2215,7 +2225,7 @@ const PreviewPanel=(() => {
         const img=document.createElement('img');
         img.src=url;img.className='pv-img';img.draggable=false;
         ph.replaceWith(img);
-        if(_detailMode){ /* V5.20: 右下拡大インセットを重ねて表示 */
+        if(_detailMode&&wrap&&!wrap.querySelector('.pv-inset')){ /* V5.20/V5.30: 二重追加防止 */
           const iurl=await _renderDetailInset(n);
           if(iurl&&wrap&&wrap.isConnected&&ov.classList.contains('on')){
             const ins=document.createElement('img');
@@ -2244,6 +2254,28 @@ const PreviewPanel=(() => {
 
   function close(){document.getElementById('preview-overlay').classList.remove('on');}
 
+  /* V5.30(パフォーマンス): 詳細番号モードの±調整・ON/OFF切替でグリッド全体を再構築せず、
+     既存サムネイルはそのままインセット画像だけを追加/更新/削除する */
+  async function _refreshInsets(){
+    const ov=document.getElementById('preview-overlay');
+    const wraps=document.getElementById('pv-grid').querySelectorAll('.pv-thumb');
+    let i=0;
+    for(const wrap of wraps){
+      if(!ov.classList.contains('on'))return;
+      let ins=wrap.querySelector('.pv-inset');
+      if(!_detailMode){if(ins)ins.remove();continue;}
+      const n=+(wrap.parentElement&&wrap.parentElement.dataset.page);
+      if(!n)continue;
+      const url=await _renderDetailInset(n);
+      if(!url||!wrap.isConnected)continue;
+      if(!ins){ins=document.createElement('img');ins.className='pv-inset';ins.draggable=false;wrap.appendChild(ins);}
+      const disp=_detailDispFracs();
+      ins.style.width=(disp.w*100)+'%';ins.style.height=(disp.h*100)+'%';
+      ins.src=url;
+      if(++i%3===0)await new Promise(r=>setTimeout(r,0)); /* UIブロック防止 */
+    }
+  }
+
   /* V5.10: ★のみトグル */
   const _favBtn=document.getElementById('pv-fav-btn');
   if(_favBtn)_favBtn.addEventListener('click',()=>{
@@ -2268,18 +2300,18 @@ const PreviewPanel=(() => {
     _detailMode=!_detailMode;
     _detailBtn.classList.toggle('on',_detailMode);
     if(_calEl)_calEl.classList.toggle('on',_detailMode); /* V5.24: ON時だけ±調整を表示 */
-    _buildGrid();_loadThumbs();
+    _refreshInsets(); /* V5.30: グリッド再構築せずインセットのみ追加/削除 */
   },{passive:true});
   /* V5.26: 幅・高さそれぞれの±調整(即時反映+自動記憶) */
   function _adjustDetailFracW(delta){
     _detailFracW=Math.max(DETAIL_FRAC_MIN,Math.min(DETAIL_FRAC_MAX,_detailFracW+delta));
     try{localStorage.setItem(DETAIL_CAL_KEY_W,String(_detailFracW));}catch(_){}
-    _updateDetailPct();_buildGrid();_loadThumbs();
+    _updateDetailPct();_refreshInsets(); /* V5.30 */
   }
   function _adjustDetailFracH(delta){
     _detailFracH=Math.max(DETAIL_FRAC_MIN,Math.min(DETAIL_FRAC_MAX,_detailFracH+delta));
     try{localStorage.setItem(DETAIL_CAL_KEY_H,String(_detailFracH));}catch(_){}
-    _updateDetailPct();_buildGrid();_loadThumbs();
+    _updateDetailPct();_refreshInsets(); /* V5.30 */
   }
   document.getElementById('pv-detail-w-minus')?.addEventListener('click',()=>_adjustDetailFracW(-DETAIL_FRAC_STEP),{passive:true});
   document.getElementById('pv-detail-w-plus')?.addEventListener('click',()=>_adjustDetailFracW(DETAIL_FRAC_STEP),{passive:true});
@@ -2289,7 +2321,7 @@ const PreviewPanel=(() => {
   function _adjustDetailZoom(delta){
     _detailZoom=Math.max(DETAIL_ZOOM_MIN,Math.min(DETAIL_ZOOM_MAX,+(_detailZoom+delta).toFixed(2)));
     try{localStorage.setItem(DETAIL_CAL_KEY_Z,String(_detailZoom));}catch(_){}
-    _updateDetailPct();_buildGrid();_loadThumbs();
+    _updateDetailPct();_refreshInsets(); /* V5.30 */
   }
   document.getElementById('pv-detail-z-minus')?.addEventListener('click',()=>_adjustDetailZoom(-DETAIL_ZOOM_STEP),{passive:true});
   document.getElementById('pv-detail-z-plus')?.addEventListener('click',()=>_adjustDetailZoom(DETAIL_ZOOM_STEP),{passive:true});
@@ -2705,7 +2737,7 @@ class SubWin{
     const cx=(t.clientX-r.left)+this.offX*this.innerScale;
     const cy=(t.clientY-r.top )+this.offY*this.innerScale;
     const p=Utils.canvasToPdf(cx,cy,this._vp.transform);
-    Logger.debug('[SW._toPdfPos] body=('+((t.clientX-r.left).toFixed(1))+','+((t.clientY-r.top).toFixed(1))+') → pdf=('+p.x.toFixed(2)+','+p.y.toFixed(2)+')');
+    if(Logger.on)Logger.debug('[SW._toPdfPos] body=('+((t.clientX-r.left).toFixed(1))+','+((t.clientY-r.top).toFixed(1))+') → pdf=('+p.x.toFixed(2)+','+p.y.toFixed(2)+')');
     return p;
   }
   /* v6: PDF座標 → body pixel (selCtx描画用) */
@@ -3290,7 +3322,7 @@ const App=(() => {
     const cx=(src.clientX-r.left-panX)/cssExtraZoom;
     const cy=(src.clientY-r.top -panY)/cssExtraZoom;
     const p=Utils.canvasToPdf(cx,cy,_currentVP.transform);
-    Logger.debug('[_getPdfPos] client=('+src.clientX.toFixed(1)+','+src.clientY.toFixed(1)+') → pdf=('+p.x.toFixed(2)+','+p.y.toFixed(2)+') vt=['+_currentVP.transform.slice(0,4).map(v=>v.toFixed(3)).join(',')+']');
+    if(Logger.on)Logger.debug('[_getPdfPos] client=('+src.clientX.toFixed(1)+','+src.clientY.toFixed(1)+') → pdf=('+p.x.toFixed(2)+','+p.y.toFixed(2)+') vt=['+_currentVP.transform.slice(0,4).map(v=>v.toFixed(3)).join(',')+']');
     return p;
   }
   function _isOnCanvas(src){
@@ -3317,7 +3349,7 @@ const App=(() => {
   /* --- redraw (アノテーション再描画) --- */
   function redraw(){
     if(!Logger.flags.redraw)return;
-    Logger.debug('[redraw] page='+curPage+' renderScale='+renderScale.toFixed(3)+' cssEZ='+cssExtraZoom.toFixed(3)+' strokes='+(strokes[curPage]||[]).length);
+    if(Logger.on)Logger.debug('[redraw] page='+curPage+' renderScale='+renderScale.toFixed(3)+' cssEZ='+cssExtraZoom.toFixed(3)+' strokes='+(strokes[curPage]||[]).length);
     annCtx.clearRect(0,0,annCvs.width,annCvs.height);
     if(Logger.flags.annotationDraw&&_currentVP)DrawUtil.drawAnnotations(annCtx,strokes[curPage]||[],_currentVP.transform);
     if(Logger.flags.overlay)_drawSelOv();
@@ -3330,7 +3362,7 @@ const App=(() => {
   async function renderPage(num){
     if(!Logger.flags.pdfRender)return;
     if(!pdfDoc)return;
-    Logger.debug('[renderPage] page='+num+' scale='+scale.toFixed(3)+' dpr='+(window.devicePixelRatio||1).toFixed(2));
+    if(Logger.on)Logger.debug('[renderPage] page='+num+' scale='+scale.toFixed(3)+' dpr='+(window.devicePixelRatio||1).toFixed(2));
     const ver=++renderVer;
 
     /* v37 [残]: 前回タスクキャンセル — 並走レンダリング防止 */
@@ -3834,7 +3866,7 @@ const App=(() => {
       _saveUndoSnap();  /* v2.09: eraser前スナップ */
       strokes[curPage]=(strokes[curPage]||[]).flatMap(s=>DrawUtil.applyEraserAll(s,er.points||[],r));
       curStroke=null;ovlCtx.clearRect(0,0,ovlCvs.width,ovlCvs.height);
-      redraw();_drawSelOv(); /* サブ窓更新はstroke:added→refreshAnnotations()に一本化 */
+      _drawSelOv(); /* V5.30: redraw()はstroke:addedリスナーに一本化(直後の同期emitで実行される) */
       EventBus.emit('stroke:added');return;
     }
     if(!curStroke)return;
@@ -3842,7 +3874,7 @@ const App=(() => {
     if(!strokes[curPage])strokes[curPage]=[];
     if(strokes[curPage].length>=MAX_STROKES_PER_PAGE){strokes[curPage].shift();showToast('⚠️ ストローク上限に達しました');}
     strokes[curPage].push({...curStroke,points:curStroke.points?[...curStroke.points]:undefined});
-    curStroke=null;redraw(); /* サブ窓更新はstroke:added→refreshAnnotations()に一本化 */
+    curStroke=null; /* V5.30: redraw()はstroke:addedリスナー(同期実行)に一本化し二重描画を解消 */
     EventBus.emit('stroke:added');
   }
 
@@ -3923,7 +3955,7 @@ const App=(() => {
   function _saveUndoSnap(){
     const pg=curPage;
     if(!_undoStack[pg])_undoStack[pg]=[];
-    _undoStack[pg].push(JSON.parse(JSON.stringify(strokes[pg]||[])));
+    _undoStack[pg].push(typeof structuredClone==='function'?structuredClone(strokes[pg]||[]):JSON.parse(JSON.stringify(strokes[pg]||[]))); /* V5.30: 高速化(挙動同一) */
     if(_undoStack[pg].length>MAX_UNDO_STEPS)_undoStack[pg].shift();
     _redoStack[pg]=[];  /* 新操作でRedoクリア */
     _updateUndoRedoBtn();  /* v2.10: 状態同期 */
@@ -5985,7 +6017,7 @@ const TextSearch = (() => {
   async function renderTextLayer(page, vp, pageNum) {
     /* V3.13修正: スパン生成廃止 → vpを保存してキャンバス描画 */
     _renderVP = vp;
-    console.debug('[TextSearch] renderTextLayer pg='+pageNum+' w='+Math.round(vp.width)+' h='+Math.round(vp.height));
+    if(Logger.on)Logger.debug('[TextSearch] renderTextLayer pg='+pageNum+' w='+Math.round(vp.width)+' h='+Math.round(vp.height)); /* V5.30 */
     if (_isOpen && _query) await _drawHighlights();
   }
 
@@ -6005,7 +6037,7 @@ const TextSearch = (() => {
     _syncHlCanvas();
     _hlCtx.clearRect(0, 0, _hlCvs.width, _hlCvs.height);
     if (!_renderVP || !_isOpen || !_query || !_matches.length) return;
-    console.debug('[TextSearch] _drawHighlights matches='+_matches.length+' curIdx='+_curIdx);
+    if(Logger.on)Logger.debug('[TextSearch] _drawHighlights matches='+_matches.length+' curIdx='+_curIdx); /* V5.30 */
     const vp  = _renderVP;
     const cur = App.currentPage;
     _matches.forEach(function(m, idx) {

@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
-<title>M_Viewer V5.50</title>
+<title>M_Viewer V5.51</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
 /* ════════════════════════════════════════════════════════════
-   M_Viewer — AERO-GRADE PROFESSIONAL THEME  V5.50 (HUD ORANGE)
+   M_Viewer — AERO-GRADE PROFESSIONAL THEME  V5.51 (HUD ORANGE)
    Design: 近未来計器盤 / ガラス調 / 高コントラスト / 低疲労
    方針: 全セレクタ互換・JS無変更・状態(hover/active/on/disabled/focus)完全分離
    ════════════════════════════════════════════════════════════ */
@@ -1307,7 +1307,7 @@ button{font-family:inherit}
 </div>
 <div id="hdr">
   <div class="hr">
-    <span class="logo" id="logo-ver">M_Viewer <span style="font-size:10px">V5.50</span></span>
+    <span class="logo" id="logo-ver">M_Viewer <span style="font-size:10px">V5.51</span></span>
     <input type="file" id="fileInput" accept="application/pdf" style="display:none">
     <span id="fnlbl">ファイル未選択</span>
     <div class="vs"></div>
@@ -1444,7 +1444,7 @@ button{font-family:inherit}
   </div>
   <div id="dz">
     <div class="dzi">📄</div>
-    <div class="dzm">M_Viewer V5.50</div>
+    <div class="dzm">M_Viewer V5.51</div>
     <div class="dzs">タップして選択 / ドラッグ＆ドロップ<br>ペン・蛍光ペン: Apple Pencil専用<br>その他ツール・スクロール: 指でも操作可<br>2本指でピンチ拡大縮小 (最大800%)</div>
     <button class="dzb" id="dz-open">PDFを開く</button>
   </div>
@@ -1576,7 +1576,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/p
      2. ファイル名 M_Viewer_vN.html を更新
    それ以外 (meta.json / console / title / dzm / ロゴ左上) は自動反映。
    ============================================================ */
-const APP_VER='V5.50'; /* ← ★ バージョンアップ時はここだけ変える */
+const APP_VER='V5.51'; /* ← ★ バージョンアップ時はここだけ変える */
 
 /* v29: PDF_MAX_DPR を 1.5 → 2.0 に変更
    iPad Retina(DPR=2): canvas物理px = CSS px × 2 = 画面物理px → 完全1:1 → ぼやけ解消
@@ -1632,7 +1632,7 @@ const PdfRenderCore=(() => {
    (#cwの外・拡大されない場所)に配置する。#cwはwill-change:transformにより独立した
    重なり層を作るため、hiResCvs表示中はpdfCvsと#cw自身の背景を透明化して見せる。 */
 const HiResView=(() => {
-  let cvs=null,ver=0,task=null,_pdfCvsRef=null,_cwRef=null;
+  let cvs=null,ver=0,task=null,_pdfCvsRef=null,_cwRef=null,_annCvsRef=null;
   function _ensure(caEl){
     if(cvs)return cvs;
     cvs=document.createElement('canvas');
@@ -1641,6 +1641,7 @@ const HiResView=(() => {
     const cw=caEl.querySelector('#cw');
     caEl.insertBefore(cvs, cw); /* #cwより前(DOM順で下)に配置。annCvs/ovlCvs(#cw内)は常に前面のまま */
     _pdfCvsRef=caEl.querySelector('#pdfCvs');
+    _annCvsRef=caEl.querySelector('#annCvs');
     _cwRef=cw;
     return cvs;
   }
@@ -1654,13 +1655,14 @@ const HiResView=(() => {
     if(task){try{task.cancel();}catch(_){}task=null;}
     if(cvs)cvs.style.display='none';
     if(_pdfCvsRef)_pdfCvsRef.style.visibility=''; /* pdfCvsを再度見せる */
+    if(_annCvsRef)_annCvsRef.style.visibility=''; /* V5.51: 書込みレイヤーも再度見せる */
     if(_cwRef)_cwRef.style.background=''; /* #cwの白背景を元に戻す */
   }
   function cancel(){hide();} /* V5.47: hide()に統合(役割が重複していたため) */
   /* rectS1: {x1,y1,x2,y2} = クロップ範囲をscale=1基準(canvas-pixel-at-scale1)で表したもの(offsetX/Y計算用)
      hiScale: 実際にレンダリングする倍率(= 現在のユーザー倍率×DPR)
      finalBox: {left,top,width,height} = 画面上(#ca基準)での最終表示位置・サイズ */
-  async function renderVisible(caEl,page,rectS1,hiScale,finalBox){
+  async function renderVisible(caEl,page,rectS1,hiScale,finalBox,strokeArr){
     const myVer=++ver;
     const c=_ensure(caEl);
     const rasterW=Math.max(1,Math.round((rectS1.x2-rectS1.x1)*hiScale));
@@ -1677,6 +1679,13 @@ const HiResView=(() => {
     const res=await PdfRenderCore.finish(task);
     if(task===started.task)task=null; /* 完了したので保持を解除(以降のhide()等が誤って再cancelしないように) */
     if(res.cancelled||myVer!==ver)return false;
+    /* V5.51: 書込み内容もPDF下絵と同じ座標変換(started.vp.transform)で同じcanvasへ焼き込む。
+       annCvs(#cw内・低解像度でCSS拡大されぼやける)を隠し、この高解像度の合成結果だけを見せる。
+       既存のストロークデータ・座標系(strokes配列・DrawUtil.drawAnnotations自体)は無変更。 */
+    if(strokeArr&&strokeArr.length){
+      const ctx=c.getContext('2d');
+      DrawUtil.drawAnnotations(ctx,strokeArr,started.vp.transform);
+    }
     /* 位置/サイズ/表示切替をrender完了・バージョン確認後にまとめて確定(古い呼び出しの
        完了で新しい位置設定が上書きされる不具合を防ぐため、displayと同じタイミングで反映) */
     const x1r=Math.round(finalBox.left),y1r=Math.round(finalBox.top);
@@ -1685,6 +1694,7 @@ const HiResView=(() => {
     c.style.left=x1r+'px';c.style.top=y1r+'px';
     c.style.width=outW+'px';c.style.height=outH+'px';
     if(_pdfCvsRef)_pdfCvsRef.style.visibility='hidden';
+    if(_annCvsRef)_annCvsRef.style.visibility='hidden'; /* V5.51: 低解像度の書込みレイヤーを隠す(焼き込み済みのため) */
     if(_cwRef)_cwRef.style.background='transparent';
     c.style.display='block';
     /* V5.48バグ修正: 記憶VIEW経由など、ジェスチャーを介さずに表示確定した直後は、
@@ -3586,7 +3596,8 @@ const App=(() => {
       left:panX+s1x1*myScale, top:panY+s1y1*myScale,
       width:(s1x2-s1x1)*myScale, height:(s1y2-s1y1)*myScale
     };
-    const ok=await HiResView.renderVisible(caEl,page,rectS1,hiScale,finalBox);
+    const strokeArr=strokes[myPage]||[]; /* V5.51: 書込み内容も一緒に高解像度化 */
+    const ok=await HiResView.renderVisible(caEl,page,rectS1,hiScale,finalBox,strokeArr);
     if(ok&&(curPage!==myPage||scale!==myScale))HiResView.hide(); /* 描画完了までに状態が変わっていれば破棄 */
   }
 
@@ -4554,6 +4565,7 @@ const App=(() => {
     },300);
     redraw();                        /* v46: サブ窓操作→メイン窓へ即時反映 */
     SubWinManager.refreshAnnotations();
+    _refreshHiResVisible(); /* V5.51: 書込み内容が変わったら高解像度合成もやり直す(等倍以下では内部で自動スキップ) */
   });
   /* v8: PDF出力中はautosaveスキップ (メモリ競合防止) */
   EventBus.on('autosave:periodic',()=>{if(pdfDoc&&!_exportInProgress)AutoSave.schedSave(_getState);});

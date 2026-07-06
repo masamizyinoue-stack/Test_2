@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
-<title>M_Viewer V5.44</title>
+<title>M_Viewer V5.45</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
 /* ════════════════════════════════════════════════════════════
-   M_Viewer — AERO-GRADE PROFESSIONAL THEME  V5.44 (HUD ORANGE)
+   M_Viewer — AERO-GRADE PROFESSIONAL THEME  V5.45 (HUD ORANGE)
    Design: 近未来計器盤 / ガラス調 / 高コントラスト / 低疲労
    方針: 全セレクタ互換・JS無変更・状態(hover/active/on/disabled/focus)完全分離
    ════════════════════════════════════════════════════════════ */
@@ -1309,7 +1309,7 @@ button{font-family:inherit}
 </div>
 <div id="hdr">
   <div class="hr">
-    <span class="logo" id="logo-ver">M_Viewer <span style="font-size:10px">V5.44</span></span>
+    <span class="logo" id="logo-ver">M_Viewer <span style="font-size:10px">V5.45</span></span>
     <input type="file" id="fileInput" accept="application/pdf" style="display:none">
     <span id="fnlbl">ファイル未選択</span>
     <div class="vs"></div>
@@ -1446,7 +1446,7 @@ button{font-family:inherit}
   </div>
   <div id="dz">
     <div class="dzi">📄</div>
-    <div class="dzm">M_Viewer V5.44</div>
+    <div class="dzm">M_Viewer V5.45</div>
     <div class="dzs">タップして選択 / ドラッグ＆ドロップ<br>ペン・蛍光ペン: Apple Pencil専用<br>その他ツール・スクロール: 指でも操作可<br>2本指でピンチ拡大縮小 (最大800%)</div>
     <button class="dzb" id="dz-open">PDFを開く</button>
   </div>
@@ -1578,7 +1578,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/p
      2. ファイル名 M_Viewer_vN.html を更新
    それ以外 (meta.json / console / title / dzm / ロゴ左上) は自動反映。
    ============================================================ */
-const APP_VER='V5.44'; /* ← ★ バージョンアップ時はここだけ変える */
+const APP_VER='V5.45'; /* ← ★ バージョンアップ時はここだけ変える */
 
 /* v29: PDF_MAX_DPR を 1.5 → 2.0 に変更
    iPad Retina(DPR=2): canvas物理px = CSS px × 2 = 画面物理px → 完全1:1 → ぼやけ解消
@@ -4713,6 +4713,9 @@ const App=(() => {
          旧キャンバスサイズで誤クランプが起き、ビュー位置がずれる(2回押し問題の根本原因)。
          二重RAFで「renderPageの全RAF完了」を待ち、その後にpanX/panYを再設定して正しいサイズでクランプする。 */
       await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+      /* V5.45バグ修正: HiResViewは#cwの外にあり#cwのtransformに連動しないため、
+         位置を再補正する前に一旦隠す(隠さないと補正前の位置に取り残されて表示が乱れる) */
+      HiResView.hide('restoreView-correct');
       panX=px;panY=py;scale=sc;   /* RAF中にclampで変わった可能性があるため再設定 */
       _clampPan();_updateTransform();
       _zlblEl.textContent=Math.round(scale*100)+'%';

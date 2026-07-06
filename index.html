@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
-<title>M_Viewer V5.39</title>
+<title>M_Viewer V5.41</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
 /* ════════════════════════════════════════════════════════════
-   M_Viewer — AERO-GRADE PROFESSIONAL THEME  V5.39 (HUD ORANGE・解像度比較ボタン版)
+   M_Viewer — AERO-GRADE PROFESSIONAL THEME  V5.41 (HUD ORANGE)
    Design: 近未来計器盤 / ガラス調 / 高コントラスト / 低疲労
    方針: 全セレクタ互換・JS無変更・状態(hover/active/on/disabled/focus)完全分離
    ════════════════════════════════════════════════════════════ */
@@ -1309,7 +1309,7 @@ button{font-family:inherit}
 </div>
 <div id="hdr">
   <div class="hr">
-    <span class="logo" id="logo-ver">M_Viewer <span style="font-size:10px">V5.39</span></span>
+    <span class="logo" id="logo-ver">M_Viewer <span style="font-size:10px">V5.41</span></span>
     <input type="file" id="fileInput" accept="application/pdf" style="display:none">
     <span id="fnlbl">ファイル未選択</span>
     <div class="vs"></div>
@@ -1446,7 +1446,7 @@ button{font-family:inherit}
   </div>
   <div id="dz">
     <div class="dzi">📄</div>
-    <div class="dzm">M_Viewer V5.39</div>
+    <div class="dzm">M_Viewer V5.41</div>
     <div class="dzs">タップして選択 / ドラッグ＆ドロップ<br>ペン・蛍光ペン: Apple Pencil専用<br>その他ツール・スクロール: 指でも操作可<br>2本指でピンチ拡大縮小 (最大800%)</div>
     <button class="dzb" id="dz-open">PDFを開く</button>
   </div>
@@ -1578,7 +1578,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/p
      2. ファイル名 M_Viewer_vN.html を更新
    それ以外 (meta.json / console / title / dzm / ロゴ左上) は自動反映。
    ============================================================ */
-const APP_VER='V5.39'; /* ← ★ バージョンアップ時はここだけ変える */
+const APP_VER='V5.41'; /* ← ★ バージョンアップ時はここだけ変える */
 
 /* v29: PDF_MAX_DPR を 1.5 → 2.0 に変更
    iPad Retina(DPR=2): canvas物理px = CSS px × 2 = 画面物理px → 完全1:1 → ぼやけ解消
@@ -1607,6 +1607,13 @@ const PdfRenderCore=(() => {
        明示的なsize{w,h}で渡す(未指定時のみ従来通りvp基準にフォールバック)。 */
     if(prevTask){try{prevTask.cancel();}catch(_){}}
     const vp=page.getViewport(opts);
+    /* V5.40診断: viewport生成パラメータとtransform行列をログ(ロジック変更なし・読み取りのみ) */
+    console.log('%c[MatrixDebug][メイン/HiResView] opts.scale='+opts.scale.toFixed(4)+' offsetX='+opts.offsetX.toFixed(4)+' offsetY='+opts.offsetY.toFixed(4),'color:#0ff');
+    console.log('[MatrixDebug][メイン/HiResView] vp.transform=['+vp.transform.map(v=>v.toFixed(4)).join(', ')+']  (a,b,c,d,e,f)');
+    if(size){
+      const fracW=size.w-Math.floor(size.w),fracH=size.h-Math.floor(size.h);
+      console.log('[MatrixDebug][メイン/HiResView] canvas.width/height指定値: '+size.w+' x '+size.h+' (整数か: w='+(fracW===0)+' h='+(fracH===0)+')');
+    }
     if(size){canvas.width=size.w;canvas.height=size.h;}
     else{canvas.width=Math.round(vp.width);canvas.height=Math.round(vp.height);}
     const ctx=canvas.getContext('2d');
@@ -1733,9 +1740,17 @@ const HiResView=(() => {
     const myVer=++ver;
     const c=_ensure(cwEl);
     /* CSS表示サイズ(#cw座標系=renderScale基準。祖先#cwのscale(cssExtraZoom)で最終的に正しいサイズへ伸びる) */
-    const outW=Math.max(1,Math.round((rectRS.x2-rectRS.x1))),outH=Math.max(1,Math.round((rectRS.y2-rectRS.y1)));
-    c.style.left=rectRS.x1+'px';c.style.top=rectRS.y1+'px';
+    /* V5.41バグ修正: 配置座標を#cw座標系上で整数pxに丸める。
+       従来はrectRS.x1/y1(小数)をそのままstyle.left/topへ渡しており、サブ窓には無い
+       サブピクセル配置(実測 left=0.1273px top=0.4087px)がにじみの原因になっていた。
+       左上・右下をそれぞれ丸めてから幅/高さを算出することで、境界のズレも防ぐ。
+       クロップ内容自体(rectS1・hiScaleの計算)には一切手を加えない。 */
+    const x1r=Math.round(rectRS.x1),y1r=Math.round(rectRS.y1);
+    const x2r=Math.round(rectRS.x2),y2r=Math.round(rectRS.y2);
+    const outW=Math.max(1,x2r-x1r),outH=Math.max(1,y2r-y1r);
+    c.style.left=x1r+'px';c.style.top=y1r+'px';
     c.style.width=outW+'px';c.style.height=outH+'px';
+    console.log('[MatrixDebug][メイン/HiResView] canvas配置(整数化後)left='+x1r+'px top='+y1r+'px (丸め前: left='+rectRS.x1.toFixed(4)+' top='+rectRS.y1.toFixed(4)+')'); /* V5.41 */
     /* V5.32バグ修正: 実ラスタ解像度はクロップ範囲(rectS1)×hiScaleで明示計算する。
        これがサブ窓と同じ「窓の実サイズぶんだけ紙を用意する」考え方。 */
     const rasterW=Math.max(1,Math.round((rectS1.x2-rectS1.x1)*hiScale));
@@ -2948,6 +2963,12 @@ class SubWin{
     const rw=Math.round(cwCss*dpr),rh=Math.round(chCss*dpr);
     /* 可視領域用VP: offsetで原点を(offX,offY)へ平行移動 */
     const hvp=page.getViewport({scale:sc*dpr,offsetX:-this.offX*sc*dpr,offsetY:-this.offY*sc*dpr});
+    /* V5.40診断: viewport生成パラメータとtransform行列をログ(ロジック変更なし・読み取りのみ) */
+    console.log('%c[MatrixDebug][サブ窓] opts.scale='+(sc*dpr).toFixed(4)+' offsetX='+(-this.offX*sc*dpr).toFixed(4)+' offsetY='+(-this.offY*sc*dpr).toFixed(4),'color:#fa0');
+    console.log('[MatrixDebug][サブ窓] hvp.transform=['+hvp.transform.map(v=>v.toFixed(4)).join(', ')+']  (a,b,c,d,e,f)');
+    console.log('[MatrixDebug][サブ窓] canvas.width/height指定値: '+rw+' x '+rh+' (整数か: w='+(rw===Math.floor(rw))+' h='+(rh===Math.floor(rh))+')');
+    /* サブ窓は#cw配下ではなくwindow自体がsx/syで配置される。その位置の整数/小数も確認 */
+    console.log('[MatrixDebug][サブ窓] window配置sx='+this.sx.toFixed(4)+'px sy='+this.sy.toFixed(4)+'px (小数部: sx='+(this.sx%1).toFixed(4)+' sy='+(this.sy%1).toFixed(4)+')');
     this._hvp=hvp;this._rw=rw;this._rh=rh;
     const key=this.pageNum+'/'+sc.toFixed(4)+'/'+this.offX.toFixed(2)+'/'+this.offY.toFixed(2)+'/'+rw+'x'+rh;
     if(!this._pdfCache||this._pdfCacheKey!==key){

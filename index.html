@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
-<title>M_Viewer V5.52</title>
+<title>M_Viewer V5.53</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
 /* ════════════════════════════════════════════════════════════
-   M_Viewer — AERO-GRADE PROFESSIONAL THEME  V5.52 (HUD ORANGE)
+   M_Viewer — AERO-GRADE PROFESSIONAL THEME  V5.53 (HUD ORANGE)
    Design: 近未来計器盤 / ガラス調 / 高コントラスト / 低疲労
    方針: 全セレクタ互換・JS無変更・状態(hover/active/on/disabled/focus)完全分離
    ════════════════════════════════════════════════════════════ */
@@ -1307,7 +1307,7 @@ button{font-family:inherit}
 </div>
 <div id="hdr">
   <div class="hr">
-    <span class="logo" id="logo-ver">M_Viewer <span style="font-size:10px">V5.52</span></span>
+    <span class="logo" id="logo-ver">M_Viewer <span style="font-size:10px">V5.53</span></span>
     <input type="file" id="fileInput" accept="application/pdf" style="display:none">
     <span id="fnlbl">ファイル未選択</span>
     <div class="vs"></div>
@@ -1444,7 +1444,7 @@ button{font-family:inherit}
   </div>
   <div id="dz">
     <div class="dzi">📄</div>
-    <div class="dzm">M_Viewer V5.52</div>
+    <div class="dzm">M_Viewer V5.53</div>
     <div class="dzs">タップして選択 / ドラッグ＆ドロップ<br>ペン・蛍光ペン: Apple Pencil専用<br>その他ツール・スクロール: 指でも操作可<br>2本指でピンチ拡大縮小 (最大800%)</div>
     <button class="dzb" id="dz-open">PDFを開く</button>
   </div>
@@ -1576,7 +1576,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/p
      2. ファイル名 M_Viewer_vN.html を更新
    それ以外 (meta.json / console / title / dzm / ロゴ左上) は自動反映。
    ============================================================ */
-const APP_VER='V5.52'; /* ← ★ バージョンアップ時はここだけ変える */
+const APP_VER='V5.53'; /* ← ★ バージョンアップ時はここだけ変える */
 
 /* v29: PDF_MAX_DPR を 1.5 → 2.0 に変更
    iPad Retina(DPR=2): canvas物理px = CSS px × 2 = 画面物理px → 完全1:1 → ぼやけ解消
@@ -3937,10 +3937,16 @@ const App=(() => {
 
   /* --- 描画 --- */
   function _startDraw(e){
-    HiResView.hide(); /* V5.52バグ修正: 描画開始時は他の操作(パン/ピンチ)と同様に一旦クッキリ表示を解除し、
-      低解像度でも即座に反映されるannCvsで書いている最中の線を見せる。書込み完了(stroke:added)時に
-      高解像度合成をやり直して再度クッキリ化する。これが無いと書込み中は表示が更新されず、
-      指を離すまで線が見えなかった。 */
+    /* V5.53バグ修正: V5.52ではHiResView.hide()で背景(PDF下絵)ごと低解像度に戻していたため、
+       書込み中は背景までボケて見えてしまっていた。サブ窓は背景と書込みが別レイヤーで常に
+       クッキリなことに倣い、背景(hiResCvs)はそのまま表示を維持し、書込みレイヤー(annCvs)だけを
+       一旦クリアしてから見せる(既存の線は既にhiResCvs側に焼き込み済みなので、annCvsを空の
+       状態から見せても二重表示にはならない)。HiResViewが元々非表示(等倍以下)の時は
+       annCvsは常に表示中のためこの分岐はスキップされ、既存の書込みが消えることはない。 */
+    if(annCvs.style.visibility==='hidden'){
+      annCtx.clearRect(0,0,annCvs.width,annCvs.height);
+      annCvs.style.visibility='';
+    }
     const t=e.touches?e.touches[0]:e;
     const p=_getPdfPos(t);
     /* v44: paste mode廃止 → duplicate-and-select方式 */

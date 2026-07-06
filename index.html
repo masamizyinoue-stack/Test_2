@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
-<title>M_Viewer V5.53</title>
+<title>M_Viewer V5.56</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
 /* ════════════════════════════════════════════════════════════
-   M_Viewer — AERO-GRADE PROFESSIONAL THEME  V5.53 (HUD ORANGE)
+   M_Viewer — AERO-GRADE PROFESSIONAL THEME  V5.56 (HUD ORANGE)
    Design: 近未来計器盤 / ガラス調 / 高コントラスト / 低疲労
    方針: 全セレクタ互換・JS無変更・状態(hover/active/on/disabled/focus)完全分離
    ════════════════════════════════════════════════════════════ */
@@ -1209,11 +1209,12 @@ button{font-family:inherit}
 /* ── 文字検索バー (V3.01) ── */
 #search-bar{flex-shrink:0;gap:6px;padding:0 8px;overflow-x:auto;-webkit-overflow-scrolling:touch;overflow-y:hidden;display:none;height:38px;align-items:center;border-top:1px solid rgba(96,64,40,.55);background:linear-gradient(180deg,rgba(20,12,8,.98)0%,rgba(16,8,4,.98)100%)}
 #search-bar::-webkit-scrollbar{display:none}
+#search-in-wrap{position:relative;flex:1;min-width:120px;max-width:260px;display:flex;align-items:center;}
 .srch-in{
-  flex:1;min-width:120px;max-width:260px;height:28px;
+  flex:1;min-width:0;height:28px;
   background:var(--srf-low);
   border:1.5px solid var(--brd-hi);border-radius:var(--r-s);
-  color:var(--tx);font-size:13px;padding:0 9px;
+  color:var(--tx);font-size:13px;padding:0 26px 0 9px;
   font-family:var(--font);
   box-shadow:inset 0 1px 4px rgba(0,0,0,.65);
   transition:border-color .15s,box-shadow .15s;
@@ -1289,6 +1290,8 @@ button{font-family:inherit}
 #lg,.dzm{letter-spacing:.1em}
 #zlbl,#pgn,.srch-cnt,.srch-li-pg{font-family:var(--mono)}
 .hr .btn{letter-spacing:.04em}
+#search-clear{position:absolute;right:3px;top:50%;transform:translateY(-50%);width:20px;height:20px;min-width:0;padding:0;font-size:12px;line-height:1;border-radius:50%;background:var(--pan2);color:var(--tx2);border:1px solid var(--brd);display:flex;align-items:center;justify-content:center;}
+#search-clear:hover{color:var(--tx);border-color:var(--brd-hi)}
 </style>
 </head>
 <body>
@@ -1307,7 +1310,7 @@ button{font-family:inherit}
 </div>
 <div id="hdr">
   <div class="hr">
-    <span class="logo" id="logo-ver">M_Viewer <span style="font-size:10px">V5.53</span></span>
+    <span class="logo" id="logo-ver">M_Viewer <span style="font-size:10px">V5.56</span></span>
     <input type="file" id="fileInput" accept="application/pdf" style="display:none">
     <span id="fnlbl">ファイル未選択</span>
     <div class="vs"></div>
@@ -1404,7 +1407,10 @@ button{font-family:inherit}
   </div>
   <!-- V3.01: 検索バー (3行目) -->
   <div class="hr" id="search-bar">
-    <input id="search-input" class="srch-in" type="text" placeholder="文字を検索..." autocomplete="off" spellcheck="false">
+    <span id="search-in-wrap">
+      <input id="search-input" class="srch-in" type="text" placeholder="文字を検索..." autocomplete="off" spellcheck="false">
+      <button id="search-clear" title="検索文字を消去">✕</button><!-- V5.55: 入力欄内の右側に配置 -->
+    </span>
     <button class="btn srch-nav" id="search-list-btn" title="候補一覧を再表示">一覧</button><!-- V5.14 -->
     <span id="search-count" class="srch-cnt"></span>
     <button class="btn srch-nav" id="search-prev" title="前へ (Shift+Enter)">◀</button>
@@ -1444,7 +1450,7 @@ button{font-family:inherit}
   </div>
   <div id="dz">
     <div class="dzi">📄</div>
-    <div class="dzm">M_Viewer V5.53</div>
+    <div class="dzm">M_Viewer V5.56</div>
     <div class="dzs">タップして選択 / ドラッグ＆ドロップ<br>ペン・蛍光ペン: Apple Pencil専用<br>その他ツール・スクロール: 指でも操作可<br>2本指でピンチ拡大縮小 (最大800%)</div>
     <button class="dzb" id="dz-open">PDFを開く</button>
   </div>
@@ -1576,7 +1582,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/p
      2. ファイル名 M_Viewer_vN.html を更新
    それ以外 (meta.json / console / title / dzm / ロゴ左上) は自動反映。
    ============================================================ */
-const APP_VER='V5.53'; /* ← ★ バージョンアップ時はここだけ変える */
+const APP_VER='V5.56'; /* ← ★ バージョンアップ時はここだけ変える */
 
 /* v29: PDF_MAX_DPR を 1.5 → 2.0 に変更
    iPad Retina(DPR=2): canvas物理px = CSS px × 2 = 画面物理px → 完全1:1 → ぼやけ解消
@@ -1632,7 +1638,7 @@ const PdfRenderCore=(() => {
    (#cwの外・拡大されない場所)に配置する。#cwはwill-change:transformにより独立した
    重なり層を作るため、hiResCvs表示中はpdfCvsと#cw自身の背景を透明化して見せる。 */
 const HiResView=(() => {
-  let cvs=null,ver=0,task=null,_pdfCvsRef=null,_cwRef=null,_annCvsRef=null;
+  let cvs=null,ver=0,task=null,_pdfCvsRef=null,_cwRef=null,_annCvsRef=null,_scratch=null;
   function _ensure(caEl){
     if(cvs)return cvs;
     cvs=document.createElement('canvas');
@@ -1672,9 +1678,14 @@ const HiResView=(() => {
        確実に「今動いている方」をキャンセルできる(これが無いと同じcanvasへ二重にrenderが
        走りPDF.jsが例外を投げていた)。 */
     if(task){try{task.cancel();}catch(_){}task=null;}
+    /* V5.56バグ修正: 従来は表示中のcanvas(c)へ直接renderしていたため、書込み確定のたびに
+       canvas.width設定でその場が一瞬クリアされ、画面がチラついていた(特に書込み中は
+       stroke:added毎に再描画されるため頻発した)。見えない別canvas(_scratch)へ描いてから、
+       完成後に一度だけ表示用canvasへ転写することで、表示中の内容が途切れないようにする。 */
+    if(!_scratch)_scratch=document.createElement('canvas');
     const started=PdfRenderCore.start(page,{
       scale:hiScale,offsetX:-rectS1.x1*hiScale,offsetY:-rectS1.y1*hiScale
-    },c,{w:rasterW,h:rasterH});
+    },_scratch,{w:rasterW,h:rasterH});
     task=started.task; /* 同期的に即代入(awaitより前) */
     const res=await PdfRenderCore.finish(task);
     if(task===started.task)task=null; /* 完了したので保持を解除(以降のhide()等が誤って再cancelしないように) */
@@ -1683,9 +1694,14 @@ const HiResView=(() => {
        annCvs(#cw内・低解像度でCSS拡大されぼやける)を隠し、この高解像度の合成結果だけを見せる。
        既存のストロークデータ・座標系(strokes配列・DrawUtil.drawAnnotations自体)は無変更。 */
     if(strokeArr&&strokeArr.length){
-      const ctx=c.getContext('2d');
-      DrawUtil.drawAnnotations(ctx,strokeArr,started.vp.transform);
+      const sctx=_scratch.getContext('2d');
+      DrawUtil.drawAnnotations(sctx,strokeArr,started.vp.transform);
     }
+    /* V5.56: 完成した_scratchを表示用canvas(c)へ一括転写(この瞬間だけcのサイズを合わせる) */
+    if(c.width!==_scratch.width||c.height!==_scratch.height){c.width=_scratch.width;c.height=_scratch.height;}
+    const cctx=c.getContext('2d');
+    cctx.clearRect(0,0,c.width,c.height);
+    cctx.drawImage(_scratch,0,0);
     /* 位置/サイズ/表示切替をrender完了・バージョン確認後にまとめて確定(古い呼び出しの
        完了で新しい位置設定が上書きされる不具合を防ぐため、displayと同じタイミングで反映) */
     const x1r=Math.round(finalBox.left),y1r=Math.round(finalBox.top);
@@ -6457,6 +6473,12 @@ const TextSearch = (() => {
       e.stopPropagation(); _closeList();
     }, { passive: false });
 
+    document.getElementById('search-clear')?.addEventListener('click', e => {
+      e.stopPropagation();
+      if (_inputEl) { _inputEl.value = ''; _inputEl.focus(); }
+      clearTimeout(_debTimer);
+      _execSearch(); /* V5.54: 既存の空欄処理(候補一覧クローズ・ハイライト消去)をそのまま利用 */
+    }, { passive: false });
     if (_inputEl) {
       _inputEl.addEventListener('input', _onInput, { passive: true });
       _inputEl.addEventListener('keydown', e => {

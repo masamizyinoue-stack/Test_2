@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
-<title>M_Viewer V5.58</title>
+<title>M_Viewer V5.60</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
 /* ════════════════════════════════════════════════════════════
-   M_Viewer — AERO-GRADE PROFESSIONAL THEME  V5.58 (HUD ORANGE)
+   M_Viewer — AERO-GRADE PROFESSIONAL THEME  V5.60 (HUD ORANGE)
    Design: 近未来計器盤 / ガラス調 / 高コントラスト / 低疲労
    方針: 全セレクタ互換・JS無変更・状態(hover/active/on/disabled/focus)完全分離
    ════════════════════════════════════════════════════════════ */
@@ -1310,7 +1310,7 @@ button{font-family:inherit}
 </div>
 <div id="hdr">
   <div class="hr">
-    <span class="logo" id="logo-ver">M_Viewer <span style="font-size:10px">V5.58</span></span>
+    <span class="logo" id="logo-ver">M_Viewer <span style="font-size:10px">V5.60</span></span>
     <input type="file" id="fileInput" accept="application/pdf" style="display:none">
     <span id="fnlbl">ファイル未選択</span>
     <div class="vs"></div>
@@ -1450,7 +1450,7 @@ button{font-family:inherit}
   </div>
   <div id="dz">
     <div class="dzi">📄</div>
-    <div class="dzm">M_Viewer V5.58</div>
+    <div class="dzm">M_Viewer V5.60</div>
     <div class="dzs">タップして選択 / ドラッグ＆ドロップ<br>ペン・蛍光ペン: Apple Pencil専用<br>その他ツール・スクロール: 指でも操作可<br>2本指でピンチ拡大縮小 (最大800%)</div>
     <button class="dzb" id="dz-open">PDFを開く</button>
   </div>
@@ -1546,7 +1546,7 @@ button{font-family:inherit}
     <span id="pv-title">ページ一覧</span>
     <span style="flex:1"></span>
     <button id="pv-fav-btn" title="お気に入りのみ表示">★のみ</button>
-    <button id="pv-detail-btn" title="右下(詳細番号欄)を拡大表示">詳細番号モード</button><!-- V5.19 -->
+    <button id="pv-detail-btn" title="右下(図面番号欄)を拡大表示">図面番号モード</button><!-- V5.19 -->
     <span id="pv-detail-cal"><!-- V5.28: 切り出し範囲(幅・高さ)+倍率を個別に手動調整(その場で±→自動記憶) -->
       <span class="dc-grp"><span class="dc-lbl">幅</span><button id="pv-detail-w-minus">－</button><span id="pv-detail-w-pct" class="dc-pct">10%</span><button id="pv-detail-w-plus">＋</button></span>
       <span class="dc-grp"><span class="dc-lbl">高さ</span><button id="pv-detail-h-minus">－</button><span id="pv-detail-h-pct" class="dc-pct">10%</span><button id="pv-detail-h-plus">＋</button></span>
@@ -1582,7 +1582,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/p
      2. ファイル名 M_Viewer_vN.html を更新
    それ以外 (meta.json / console / title / dzm / ロゴ左上) は自動反映。
    ============================================================ */
-const APP_VER='V5.58'; /* ← ★ バージョンアップ時はここだけ変える */
+const APP_VER='V5.60'; /* ← ★ バージョンアップ時はここだけ変える */
 
 /* v29: PDF_MAX_DPR を 1.5 → 2.0 に変更
    iPad Retina(DPR=2): canvas物理px = CSS px × 2 = 画面物理px → 完全1:1 → ぼやけ解消
@@ -1665,6 +1665,9 @@ const HiResView=(() => {
     if(_cwRef)_cwRef.style.background=''; /* #cwの白背景を元に戻す */
   }
   function cancel(){hide();} /* V5.47: hide()に統合(役割が重複していたため) */
+  function reset(){ /* V5.60バグ修正: ファイルを閉じる/空タブへ切替える際に呼び、状態を確実にクリアする */
+    hide();
+  }
   /* rectS1: {x1,y1,x2,y2} = クロップ範囲をscale=1基準(canvas-pixel-at-scale1)で表したもの(offsetX/Y計算用)
      hiScale: 実際にレンダリングする倍率(= 現在のユーザー倍率×DPR)
      finalBox: {left,top,width,height} = 画面上(#ca基準)での最終表示位置・サイズ */
@@ -1724,7 +1727,7 @@ const HiResView=(() => {
     void c.offsetWidth;
     return true;
   }
-  return{hide,cancel,renderVisible};
+  return{hide,cancel,reset,renderVisible};
 })();
 const IS_PC=matchMedia('(hover:hover) and (pointer:fine)').matches; /* V5.13: PC(マウス・キーボード)環境判定。iPad(タッチ)はfalse */
 const MAX_SUBWIN=2,MAX_STROKES_PER_PAGE=500;
@@ -3592,6 +3595,7 @@ const App=(() => {
      ============================================================ */
   async function _refreshHiResVisible(){
     if(!pdfDoc||!_currentVP)return;
+    try{
     /* V5.35: 「スキップしてよいか」の事前判定を撤去。
        これまで判定条件の見落とし(小さいページ/記憶VIEW経由など)により発動しないケースが
        繰り返し見つかったため、判定自体をやめて「ズーム操作の一段落後は必ず実行する」方式に
@@ -3624,6 +3628,12 @@ const App=(() => {
     const strokeArr=strokes[myPage]||[]; /* V5.51: 書込み内容も一緒に高解像度化 */
     const ok=await HiResView.renderVisible(caEl,page,rectS1,hiScale,finalBox,strokeArr,isDrawing); /* V5.57: 描画中は書込みレイヤーを隠さない */
     if(ok&&(curPage!==myPage||scale!==myScale))HiResView.hide(); /* 描画完了までに状態が変わっていれば破棄 */
+    }catch(e){
+      /* V5.60バグ修正: 従来はここで例外が起きると未処理のPromise例外として握りつぶされ、
+         原因の切り分けが困難だった。ログに残した上でクッキリ表示を安全に隠す。 */
+      Logger.warn('[_refreshHiResVisible] エラー',e);
+      HiResView.hide();
+    }
   }
 
   /* --- 選択 --- */
@@ -4088,6 +4098,7 @@ const App=(() => {
     if(!pdfDoc)return;
     const n=abs?Math.max(1,Math.min(totalPages,d)):curPage+d;
     if(n<1||n>totalPages)return;
+    clearTimeout(_inkSettleTimer); /* V5.60バグ修正: ページ切替時、旧ページ向けの保留中タイマーを破棄 */
     curPage=n;await renderPage(n);
     SubWinManager.updateAll(strokes,n);EventBus.emit('stroke:added');
   }
@@ -4269,6 +4280,7 @@ const App=(() => {
     Logger.info('[closeFile] resume keys cleared, file='+_closingFile);
     pdfDoc=null;origBuf=null;fileName='';curPage=1;totalPages=0;strokes={};_docId=null;
     [pdfCvs,annCvs,ovlCvs].forEach(c=>{c.width=1;c.height=1;c.style.width='';c.style.height='';}); /* V5.03 */
+    HiResView.reset(); /* V5.60バグ修正: クッキリ表示レイヤーの状態を確実にクリア(取り残し防止) */
     cwEl.style.display='none';
     _showHome();
     document.getElementById('fnlbl').textContent='ファイル未選択';
@@ -4568,7 +4580,7 @@ const App=(() => {
     document.getElementById('tpn').textContent=totalPages||'0';
     document.getElementById('pgn').value=curPage;
     if(pdfDoc){document.getElementById('dz').style.display='none';cwEl.style.display='block';await renderPage(curPage);}
-    else{_showHome();cwEl.style.display='none';document.getElementById('zlbl').textContent='--';[pdfCvs,annCvs,ovlCvs].forEach(c=>{c.width=1;c.height=1;c.style.width='';c.style.height='';});} /* V5.03 */
+    else{HiResView.reset();_showHome();cwEl.style.display='none';document.getElementById('zlbl').textContent='--';[pdfCvs,annCvs,ovlCvs].forEach(c=>{c.width=1;c.height=1;c.style.width='';c.style.height='';});} /* V5.03 / V5.60 */
   }
 
   /* --- 自動保存ゲッター --- */

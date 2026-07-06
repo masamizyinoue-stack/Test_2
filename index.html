@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
-<title>M_Viewer V5.41</title>
+<title>M_Viewer V5.42</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
 /* ════════════════════════════════════════════════════════════
-   M_Viewer — AERO-GRADE PROFESSIONAL THEME  V5.41 (HUD ORANGE)
+   M_Viewer — AERO-GRADE PROFESSIONAL THEME  V5.42 (HUD ORANGE)
    Design: 近未来計器盤 / ガラス調 / 高コントラスト / 低疲労
    方針: 全セレクタ互換・JS無変更・状態(hover/active/on/disabled/focus)完全分離
    ════════════════════════════════════════════════════════════ */
@@ -337,7 +337,7 @@ button{font-family:inherit}
 #ca{flex:1;overflow:hidden;position:relative;min-height:0;touch-action:none;background:#2e2723;overscroll-behavior:none}
 #cw{position:absolute;top:0;left:0;transform-origin:0 0;background:#ffffff;will-change:transform;box-shadow:0 0 0 1px rgba(0,0,0,.4),0 6px 32px rgba(0,0,0,.55)}
 #pdfCvs{display:block}
-#annCvs,#ovlCvs{position:absolute;top:0;left:0}
+#annCvs,#ovlCvs{position:absolute;top:0;left:0;z-index:2}
 #ovlCvs{pointer-events:none}
 
 /* ── DROP ZONE ── */
@@ -1229,9 +1229,9 @@ button{font-family:inherit}
 .srch-cnt.no-hit{color:var(--red);}
 .srch-nav{padding:0 9px!important;font-size:13px!important;}
 /* ── 検索ハイライトキャンバス ── */
-#srch-hl-cvs{position:absolute;top:0;left:0;pointer-events:none}
+#srch-hl-cvs{position:absolute;top:0;left:0;pointer-events:none;z-index:2}
 /* V3.08: TextLayerスタイル */
-#textLayerDiv{position:absolute;top:0;left:0;pointer-events:none;overflow:hidden;}
+#textLayerDiv{position:absolute;top:0;left:0;pointer-events:none;overflow:hidden;z-index:2}
 #textLayerDiv span{color:transparent;position:absolute;white-space:pre;cursor:default;transform-origin:0% 0%;line-height:1;}
 .ts-hl{background:rgba(255,200,0,0.45);border-radius:2px;}
 .ts-hl-cur{background:rgba(255,100,0,0.55);border-radius:2px;outline:2px solid rgba(210,50,0,0.90);outline-offset:1px;}
@@ -1309,7 +1309,7 @@ button{font-family:inherit}
 </div>
 <div id="hdr">
   <div class="hr">
-    <span class="logo" id="logo-ver">M_Viewer <span style="font-size:10px">V5.41</span></span>
+    <span class="logo" id="logo-ver">M_Viewer <span style="font-size:10px">V5.42</span></span>
     <input type="file" id="fileInput" accept="application/pdf" style="display:none">
     <span id="fnlbl">ファイル未選択</span>
     <div class="vs"></div>
@@ -1446,7 +1446,7 @@ button{font-family:inherit}
   </div>
   <div id="dz">
     <div class="dzi">📄</div>
-    <div class="dzm">M_Viewer V5.41</div>
+    <div class="dzm">M_Viewer V5.42</div>
     <div class="dzs">タップして選択 / ドラッグ＆ドロップ<br>ペン・蛍光ペン: Apple Pencil専用<br>その他ツール・スクロール: 指でも操作可<br>2本指でピンチ拡大縮小 (最大800%)</div>
     <button class="dzb" id="dz-open">PDFを開く</button>
   </div>
@@ -1578,7 +1578,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/p
      2. ファイル名 M_Viewer_vN.html を更新
    それ以外 (meta.json / console / title / dzm / ロゴ左上) は自動反映。
    ============================================================ */
-const APP_VER='V5.41'; /* ← ★ バージョンアップ時はここだけ変える */
+const APP_VER='V5.42'; /* ← ★ バージョンアップ時はここだけ変える */
 
 /* v29: PDF_MAX_DPR を 1.5 → 2.0 に変更
    iPad Retina(DPR=2): canvas物理px = CSS px × 2 = 画面物理px → 完全1:1 → ぼやけ解消
@@ -1707,12 +1707,18 @@ const HiResView=(() => {
   }
   window.__hiResDebugSummary=_dbgSummary; /* コンソールから手動実行: __hiResDebugSummary() */
   /* ===== 診断用ここまで ===== */
-  function _ensure(cwEl){
+  function _ensure(caEl){
+    /* V5.42バグ修正: #cw(拡大されるscale(cssExtraZoom)の対象)の子だと、ブラウザのCSS拡大
+       合成処理で内容がにじむ(内部解像度が十分でも発生する)ことが実機検証で判明。
+       サブ窓と同様「拡大されない場所」に置くため、#cwではなく#ca(caEl)の直下へ配置する。
+       表示位置は#cwのtransformに頼らず、JS側でpanX/panY/cssExtraZoomから直接計算する
+       (座標の意味・計算ロジック自体は変更しない。置き場所と最終位置の算出方法のみ変更)。 */
     if(cvs)return cvs;
     cvs=document.createElement('canvas');
     cvs.id='hiResCvs';
-    cvs.style.cssText='position:absolute;left:0;top:0;pointer-events:none;display:none;';
-    cwEl.insertBefore(cvs,cwEl.querySelector('#pdfCvs').nextSibling); /* pdfCvsの直後(annCvsより手前) */
+    cvs.style.cssText='position:absolute;left:0;top:0;pointer-events:none;display:none;z-index:1;';
+    const cw=caEl.querySelector('#cw');
+    caEl.insertBefore(cvs, cw?cw.nextSibling:null); /* #cwの直後(DOM順もannCvs等より手前) */
     return cvs;
   }
   function hide(label){
@@ -1734,23 +1740,20 @@ const HiResView=(() => {
   /* rectRS: {x1,y1,x2,y2} = #cw座標系(=renderScale基準のcanvas-pixel)でのクロップ範囲
      rectS1: 同範囲をscale=1基準(canvas-pixel-at-scale1)で表したもの(offsetX/Y計算用)
      hiScale: 実際にレンダリングする倍率(= 現在のユーザー倍率×DPR) */
-  async function renderVisible(cwEl,page,rectRS,rectS1,hiScale){
+  async function renderVisible(caEl,page,rectRS,rectS1,hiScale,finalBox){
     const _dbgT0=performance.now(); /* V5.36診断: 開始時刻 */
     console.log('[HiResDebug] renderVisible() 開始 at '+_dbgT0.toFixed(1)+'ms');
     const myVer=++ver;
-    const c=_ensure(cwEl);
+    const c=_ensure(caEl);
     /* CSS表示サイズ(#cw座標系=renderScale基準。祖先#cwのscale(cssExtraZoom)で最終的に正しいサイズへ伸びる) */
-    /* V5.41バグ修正: 配置座標を#cw座標系上で整数pxに丸める。
-       従来はrectRS.x1/y1(小数)をそのままstyle.left/topへ渡しており、サブ窓には無い
-       サブピクセル配置(実測 left=0.1273px top=0.4087px)がにじみの原因になっていた。
-       左上・右下をそれぞれ丸めてから幅/高さを算出することで、境界のズレも防ぐ。
-       クロップ内容自体(rectS1・hiScaleの計算)には一切手を加えない。 */
-    const x1r=Math.round(rectRS.x1),y1r=Math.round(rectRS.y1);
-    const x2r=Math.round(rectRS.x2),y2r=Math.round(rectRS.y2);
+    /* V5.42バグ修正: #ca直下へ配置場所を変えたため、位置指定も#cw相対(rectRS)ではなく
+       画面上の最終位置(finalBox: panX/panY/cssExtraZoom反映済み)を使う。整数px丸めはV5.41から維持。 */
+    const x1r=Math.round(finalBox.left),y1r=Math.round(finalBox.top);
+    const x2r=Math.round(finalBox.left+finalBox.width),y2r=Math.round(finalBox.top+finalBox.height);
     const outW=Math.max(1,x2r-x1r),outH=Math.max(1,y2r-y1r);
     c.style.left=x1r+'px';c.style.top=y1r+'px';
     c.style.width=outW+'px';c.style.height=outH+'px';
-    console.log('[MatrixDebug][メイン/HiResView] canvas配置(整数化後)left='+x1r+'px top='+y1r+'px (丸め前: left='+rectRS.x1.toFixed(4)+' top='+rectRS.y1.toFixed(4)+')'); /* V5.41 */
+    console.log('[MatrixDebug][メイン/HiResView] canvas配置(#ca基準・整数化後)left='+x1r+'px top='+y1r+'px w='+outW+' h='+outH); /* V5.42 */
     /* V5.32バグ修正: 実ラスタ解像度はクロップ範囲(rectS1)×hiScaleで明示計算する。
        これがサブ窓と同じ「窓の実サイズぶんだけ紙を用意する」考え方。 */
     const rasterW=Math.max(1,Math.round((rectS1.x2-rectS1.x1)*hiScale));
@@ -3664,10 +3667,16 @@ const App=(() => {
     if(s1x2-s1x1<=0||s1y2-s1y1<=0){HiResView.hide('page外');return;} /* ページ範囲外 */
     const dpr=Math.min(window.devicePixelRatio||1,PDF_MAX_DPR);
     const hiScale=myScale*dpr; /* CSS拡大に頼らず必要な実解像度そのもので描画 */
-    /* #cw座標系(renderScale基準)でのクロップ範囲(HiResView配置用) */
+    /* #cw座標系(renderScale基準)でのクロップ範囲(V5.42: 診断ログ用に維持。配置には未使用) */
     const rectRS={x1:s1x1*renderScale,y1:s1y1*renderScale,x2:s1x2*renderScale,y2:s1y2*renderScale};
     const rectS1={x1:s1x1,y1:s1y1,x2:s1x2,y2:s1y2}; /* V5.32: x2/y2追加(実ラスタサイズ算出用) */
-    const ok=await HiResView.renderVisible(cwEl,page,rectRS,rectS1,hiScale);
+    /* V5.42: 画面上の最終位置(#ca基準)。renderScale*cssExtraZoom=scale の関係を使い、
+       panX/panY(既存の読み取り専用の値)を加えるだけで#cw変換後の最終位置と一致する。 */
+    const finalBox={
+      left:panX+s1x1*myScale, top:panY+s1y1*myScale,
+      width:(s1x2-s1x1)*myScale, height:(s1y2-s1y1)*myScale
+    };
+    const ok=await HiResView.renderVisible(caEl,page,rectRS,rectS1,hiScale,finalBox);
     if(ok&&(curPage!==myPage||scale!==myScale))HiResView.hide('描画後状態変更'); /* 描画完了までに状態が変わっていれば破棄 */
   }
 

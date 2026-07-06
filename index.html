@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
-<title>M_Viewer V5.33</title>
+<title>M_Viewer V5.34</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
 /* ════════════════════════════════════════════════════════════
-   M_Viewer — AERO-GRADE PROFESSIONAL THEME  V5.33 (HUD ORANGE)
+   M_Viewer — AERO-GRADE PROFESSIONAL THEME  V5.34 (HUD ORANGE)
    Design: 近未来計器盤 / ガラス調 / 高コントラスト / 低疲労
    方針: 全セレクタ互換・JS無変更・状態(hover/active/on/disabled/focus)完全分離
    ════════════════════════════════════════════════════════════ */
@@ -1307,7 +1307,7 @@ button{font-family:inherit}
 </div>
 <div id="hdr">
   <div class="hr">
-    <span class="logo" id="logo-ver">M_Viewer <span style="font-size:10px">V5.33</span></span>
+    <span class="logo" id="logo-ver">M_Viewer <span style="font-size:10px">V5.34</span></span>
     <input type="file" id="fileInput" accept="application/pdf" style="display:none">
     <span id="fnlbl">ファイル未選択</span>
     <div class="vs"></div>
@@ -1444,7 +1444,7 @@ button{font-family:inherit}
   </div>
   <div id="dz">
     <div class="dzi">📄</div>
-    <div class="dzm">M_Viewer V5.33</div>
+    <div class="dzm">M_Viewer V5.34</div>
     <div class="dzs">タップして選択 / ドラッグ＆ドロップ<br>ペン・蛍光ペン: Apple Pencil専用<br>その他ツール・スクロール: 指でも操作可<br>2本指でピンチ拡大縮小 (最大800%)</div>
     <button class="dzb" id="dz-open">PDFを開く</button>
   </div>
@@ -1576,7 +1576,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/p
      2. ファイル名 M_Viewer_vN.html を更新
    それ以外 (meta.json / console / title / dzm / ロゴ左上) は自動反映。
    ============================================================ */
-const APP_VER='V5.33'; /* ← ★ バージョンアップ時はここだけ変える */
+const APP_VER='V5.34'; /* ← ★ バージョンアップ時はここだけ変える */
 
 /* v29: PDF_MAX_DPR を 1.5 → 2.0 に変更
    iPad Retina(DPR=2): canvas物理px = CSS px × 2 = 画面物理px → 完全1:1 → ぼやけ解消
@@ -3530,8 +3530,15 @@ const App=(() => {
      ============================================================ */
   async function _refreshHiResVisible(){
     if(!pdfDoc||!_currentVP)return;
-    /* cssExtraZoomが1に近い(=既存描画で十分な解像度がある)場合は何もしない */
-    if(cssExtraZoom<=1.05){HiResView.hide();return;}
+    /* V5.34修正: 「CSSで引き伸ばしているか(cssExtraZoom)」だけで判定すると、
+       小さい/シンプルなページ(MAX_CANVASの制約を受けずrenderScaleがscaleに一致する場合)は
+       cssExtraZoom=1になり判定をすり抜けてしまう。しかしその場合でも、既存のベース描画は
+       scale×DPRではなくhiRSCap(高倍率時は最大8倍固定)で頭打ちになっており、Retina等の
+       高DPI端末では実際の必要解像度に届いていないことがある。
+       「本当に必要な解像度(scale×dpr)」と「renderScale(ベース描画の実解像度)」を直接比較し、
+       不足している場合にのみ高解像度化する(cssExtraZoomの値そのものは判定に使わない)。 */
+    const _dprChk=Math.min(window.devicePixelRatio||1,PDF_MAX_DPR);
+    if(scale*_dprChk<=renderScale*1.05){HiResView.hide();return;}
     const myPage=curPage,myScale=scale;
     let page=_pageCache.get(myPage);
     if(!page)page=await pdfDoc.getPage(myPage);

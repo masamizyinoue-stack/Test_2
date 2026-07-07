@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
-<title>M_Viewer V6.01</title>
+<title>M_Viewer V6.02</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
 /* ════════════════════════════════════════════════════════════
-   M_Viewer — AERO-GRADE PROFESSIONAL THEME  V6.01 (HUD ORANGE)
+   M_Viewer — AERO-GRADE PROFESSIONAL THEME  V6.02 (HUD ORANGE)
    Design: 近未来計器盤 / ガラス調 / 高コントラスト / 低疲労
    方針: 全セレクタ互換・JS無変更・状態(hover/active/on/disabled/focus)完全分離
    ════════════════════════════════════════════════════════════ */
@@ -1310,7 +1310,7 @@ button{font-family:inherit}
 </div>
 <div id="hdr">
   <div class="hr">
-    <span class="logo" id="logo-ver">M_Viewer <span style="font-size:10px">V6.01</span></span>
+    <span class="logo" id="logo-ver">M_Viewer <span style="font-size:10px">V6.02</span></span>
     <input type="file" id="fileInput" accept="application/pdf" style="display:none">
     <span id="fnlbl">ファイル未選択</span>
     <div class="vs"></div>
@@ -1450,7 +1450,7 @@ button{font-family:inherit}
   </div>
   <div id="dz">
     <div class="dzi">📄</div>
-    <div class="dzm">M_Viewer V6.01</div>
+    <div class="dzm">M_Viewer V6.02</div>
     <div class="dzs">タップして選択 / ドラッグ＆ドロップ<br>ペン・蛍光ペン: Apple Pencil専用<br>その他ツール・スクロール: 指でも操作可<br>2本指でピンチ拡大縮小 (最大800%)</div>
     <button class="dzb" id="dz-open">PDFを開く</button>
   </div>
@@ -1582,7 +1582,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/p
      2. ファイル名 M_Viewer_vN.html を更新
    それ以外 (meta.json / console / title / dzm / ロゴ左上) は自動反映。
    ============================================================ */
-const APP_VER='V6.01'; /* ← ★ バージョンアップ時はここだけ変える */
+const APP_VER='V6.02'; /* ← ★ バージョンアップ時はここだけ変える */
 
 /* v29: PDF_MAX_DPR を 1.5 → 2.0 に変更
    iPad Retina(DPR=2): canvas物理px = CSS px × 2 = 画面物理px → 完全1:1 → ぼやけ解消
@@ -3737,7 +3737,7 @@ const App=(() => {
     if(_activeTool!=='sub'){
       if(Utils.isPalmContact(t))return;
       if(!_isOnCanvas(t)){_startPan(t);return;}
-      const needPen=['pen','hl','eraser'].includes(_activeTool)&&_inputMode!=='finger'; /* V6.01: ペンモードでは消しゴムもペン専用に。手書きモードでは指もそのまま描画対象 */
+      const needPen=['pen','hl','eraser'].includes(_activeTool)&&_inputMode!=='finger'; /* V6.02: ペンモードでは消しゴムもペン専用に。手書きモードでは指もそのまま描画対象 */
       if(needPen&&t.touchType!=='stylus'){
         /* v61: 描画中(Pencil使用中)は指パンを完全禁止。
            非描画中でも PEN_PAN_THRESHOLD 分移動後にパン開始(誤反応防止) */
@@ -4822,6 +4822,8 @@ const App=(() => {
   if(_vbTgl&&_vbPop)_vbTgl.addEventListener('click',()=>{
     const on=_vbPop.classList.toggle('on');
     _vbTgl.classList.toggle('on',on); /* 計算機ボタンと同じ着色(.btn.on) */
+    /* V6.02: ペンの太さポップアップと重なるのを防止（排他制御） */
+    if(on){document.getElementById('szp')?.classList.remove('on');document.getElementById('szp-bd')?.classList.remove('on');}
   });
 })();
 
@@ -5254,6 +5256,9 @@ function _initToolbar(){
     if(p.classList.contains('on')){_closeSzp();return;}
     p.classList.add('on');
     document.getElementById('szp-bd').classList.add('on'); /* v11: バックドロップON */
+    /* V6.02: 記憶VIEWポップアップと重なるのを防止（排他制御） */
+    document.getElementById('vbm-pop')?.classList.remove('on');
+    document.getElementById('vbm-toggle')?.classList.remove('on');
     const r=e.target.getBoundingClientRect();
     /* v11: visualViewport対応 (Split View / キーボード表示時のズレ防止) */
     const vvTop=(window.visualViewport?window.visualViewport.offsetTop:0);

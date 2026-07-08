@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════
-   M_Viewer — AERO-GRADE PROFESSIONAL THEME  V7.01 (HUD ORANGE)
+   M_Viewer — AERO-GRADE PROFESSIONAL THEME  V7.03 (HUD ORANGE)
    Design: 近未来計器盤 / ガラス調 / 高コントラスト / 低疲労
    方針: 全セレクタ互換・JS無変更・状態(hover/active/on/disabled/focus)完全分離
    ════════════════════════════════════════════════════════════ */
@@ -1164,7 +1164,7 @@ button{font-family:inherit}
 #pv-detail-btn:hover{border-color:var(--brd-hi);color:var(--tx)}
 #pv-detail-btn.on{background:var(--acc-deep);border-color:var(--acc2);color:#ffffff;text-shadow:0 1px 2px rgba(0,0,0,.4);box-shadow:var(--inset-hi),0 0 12px var(--acc-glow)}
 /* V5.24: 切り出し範囲の手動キャリブレーションUI(詳細番号モードON時のみ表示) */
-#pv-detail-wrap{position:relative;} /* V7.01: absolute配置の基準 */
+#pv-detail-wrap{position:relative;} /* V7.02: absolute配置の基準 */
 #pv-detail-cal{display:none;align-items:center;gap:8px;background:var(--srf);border:1.5px solid var(--brd);border-radius:var(--r-s);padding:4px 8px;box-shadow:var(--inset-hi),0 4px 16px rgba(0,0,0,.5);position:absolute;right:calc(100% + 8px);top:50%;transform:translateY(-50%);white-space:nowrap;z-index:1;}
 #pv-detail-cal.on{display:flex}
 #pv-detail-cal .dc-grp{display:flex;align-items:center;gap:3px;}

@@ -1,20 +1,22 @@
 #!/usr/bin/env python3
 """
 M_Viewer ビルドスクリプト
-  src/template.html + src/style.css → index.html (ルート直下)
-  ※ テンプレート内の <!-- INJECT:CSS --> を <style>CSS内容</style> に置換
-  ※ GitHub → Vercel デプロイ対応(index.html がルートに出力される)
+  src/template.html + src/style.css + src/*.js → index.html
+  マーカー:
+    <!-- INJECT:CSS -->         → <style>style.css内容</style>
+    /* INJECT:ファイル名.js */  → 該当JSファイルの内容
 """
-import os, sys, hashlib
+import os, sys, re, hashlib
 
 # ── 設定 ──────────────────────────────
-VER = 'V7.01'                    # ★ バージョンアップ時はここを変更
+VER = 'V7.03'                    # ★ バージョンアップ時はここを変更
 BASE = os.path.dirname(os.path.abspath(__file__))
 SRC  = os.path.join(BASE, 'src')
 TEMPLATE = os.path.join(SRC, 'template.html')
 CSS_FILE = os.path.join(SRC, 'style.css')
-OUTPUT   = os.path.join(BASE, 'index.html')   # ルート直下に出力
-MARKER   = '<!-- INJECT:CSS -->'
+OUTPUT   = os.path.join(BASE, 'index.html')
+CSS_MARKER = '<!-- INJECT:CSS -->'
+JS_PATTERN = re.compile(r'/\* INJECT:(\S+\.js) \*/')
 
 # ── ビルド ─────────────────────────────
 def build():
@@ -23,12 +25,27 @@ def build():
     with open(CSS_FILE, 'r', encoding='utf-8') as f:
         css = f.read()
 
-    if MARKER not in html:
-        print(f'✗ テンプレートに {MARKER} が見つかりません')
-        sys.exit(1)
+    # CSS注入
+    if CSS_MARKER not in html:
+        print(f'✗ テンプレートに {CSS_MARKER} が見つかりません'); sys.exit(1)
+    html = html.replace(CSS_MARKER, f'<style>\n{css.rstrip()}\n</style>')
 
-    # マーカーを <style>CSS</style> に置換
-    html = html.replace(MARKER, f'<style>\n{css.rstrip()}\n</style>')
+    # JS注入（各マーカーを対応するJSファイルの内容に置換）
+    injected = []
+    def _replace_js(m):
+        fname = m.group(1)
+        path = os.path.join(SRC, fname)
+        if not os.path.exists(path):
+            print(f'✗ {fname} が見つかりません'); sys.exit(1)
+        with open(path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        injected.append(fname)
+        # マーカー行を置換するので、末尾改行を1つだけ除去
+        if content.endswith('\n'):
+            content = content[:-1]
+        return content
+
+    html = JS_PATTERN.sub(_replace_js, html)
 
     with open(OUTPUT, 'w', encoding='utf-8') as f:
         f.write(html)
@@ -39,6 +56,8 @@ def build():
     md5 = hashlib.md5(html.encode('utf-8')).hexdigest()
 
     print(f'✓ ビルド完了: index.html ({VER})')
+    print(f'  注入CSS: style.css')
+    print(f'  注入JS:  {", ".join(injected)}')
     print(f'  行数: {lines}')
     print(f'  サイズ: {size_kb:.1f} KB')
     print(f'  MD5: {md5}')

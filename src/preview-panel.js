@@ -7,7 +7,9 @@
    ============================================================ */
 const PreviewPanel=(() => {
   const _THUMB_W=480;   /* サムネイル幅px (v2.26: 160→320→V7.02: 480 解像度UP) */
+  const CACHE_MAX=20;    /* V7.07: サムネイル/インセットキャッシュの上限ページ数(メモリ安定化) */
   let _cache={};        /* page番号→dataURL */
+  let _cacheOrder=[];    /* V7.07: LRU順管理(古い順に並ぶ) */
   let _cacheSig={};     /* v2.27: page番号→描画時のストローク内容シグネチャ */
   let _lastDoc=null;    /* PDF変更検知 */
 
@@ -37,6 +39,17 @@ const PreviewPanel=(() => {
     return{w:dw,h:dh};
   }
   let _insetCache={},_insetSig={}; /* 拡大インセット専用キャッシュ(通常サムネイルとは別管理) */
+  let _insetOrder=[]; /* V7.07: LRU順管理 */
+  /* V7.07: LRUキャッシュ登録共通ヘルパー — 上限超過時は最も古いページを1件破棄 */
+  function _lruSet(cache,sigCache,order,pageNum,sig,url){
+    cache[pageNum]=url;sigCache[pageNum]=sig;
+    const i=order.indexOf(pageNum);if(i!==-1)order.splice(i,1);
+    order.push(pageNum);
+    if(order.length>CACHE_MAX){
+      const old=order.shift();
+      delete cache[old];delete sigCache[old];
+    }
+  }
   try{const d=JSON.parse(localStorage.getItem(FAV_KEY));if(d&&typeof d==='object')_fav=d;}catch(_){}
   function _favSave(){try{localStorage.setItem(FAV_KEY,JSON.stringify(_fav));}catch(_){}}
   function _docKey(){return App.docId||('fn:'+(App.fileName||''));}
@@ -79,7 +92,7 @@ const PreviewPanel=(() => {
 
   async function _renderThumb(pageNum){
     const pd=App.pdfDoc;if(!pd)return null;
-    if(_lastDoc!==pd){_cache={};_cacheSig={};_lastDoc=pd;}  /* PDF変更→キャッシュクリア */
+    if(_lastDoc!==pd){_cache={};_cacheSig={};_cacheOrder=[];_lastDoc=pd;}  /* PDF変更→キャッシュクリア */
     const sig=_strokeSig(pageNum);
     if(_cache[pageNum]&&_cacheSig[pageNum]===sig)return _cache[pageNum];
     try{
@@ -100,7 +113,7 @@ const PreviewPanel=(() => {
         cvs.getContext('2d').drawImage(ann,0,0);
       }
       const url=cvs.toDataURL('image/jpeg',.72);
-      _cache[pageNum]=url;_cacheSig[pageNum]=sig;return url;
+      _lruSet(_cache,_cacheSig,_cacheOrder,pageNum,sig,url);return url;
     }catch(_e){return null;}
   }
 
@@ -111,7 +124,7 @@ const PreviewPanel=(() => {
        方式に変更。getViewport({scale})の結果は既存の全体表示・サムネイルと同じく回転を
        自動的に正しく処理するため、切り出し元の「右下」は常にfullCvsの右下端と一致し安全。 */
     const pd=App.pdfDoc;if(!pd)return null;
-    if(_lastDoc!==pd){_insetCache={};_insetSig={};}
+    if(_lastDoc!==pd){_insetCache={};_insetSig={};_insetOrder=[];}
     const sig=_strokeSig(pageNum)+':'+_detailFracW.toFixed(3)+':'+_detailFracH.toFixed(3);
     if(_insetCache[pageNum]&&_insetSig[pageNum]===sig)return _insetCache[pageNum];
     try{
@@ -149,7 +162,7 @@ const PreviewPanel=(() => {
         cctx.drawImage(annFull,sx,sy,scw,sch,0,0,cw,ch);
       }
       const url=cvs.toDataURL('image/jpeg',.82);
-      _insetCache[pageNum]=url;_insetSig[pageNum]=sig;return url;
+      _lruSet(_insetCache,_insetSig,_insetOrder,pageNum,sig,url);return url;
     }catch(_e){return null;}
   }
 

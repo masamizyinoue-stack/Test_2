@@ -9,7 +9,7 @@ M_Viewer ビルドスクリプト
 import os, sys, re, hashlib
 
 # ── 設定 ──────────────────────────────
-VER = 'V7.06'                    # ★ バージョンアップ時はここを変更
+VER = 'V7.07'                    # ★ バージョンアップ時はここを変更
 BASE = os.path.dirname(os.path.abspath(__file__))
 SRC  = os.path.join(BASE, 'src')
 TEMPLATE = os.path.join(SRC, 'template.html')
